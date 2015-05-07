@@ -51,7 +51,7 @@ pullResults <- function(DESeqOutputList,maternal="129S1",paternal="CASTEiJ",
   return(output)
 }
 
-filterByControls <- function(DESeqResultList,matchFile,padjCutoff = 0.01){
+filterByControls <- function(DESeqResultList,matchfile,padjCutoff = 0.01){
   diff.unique = list()
   for(tf in names(DESeqResultList$test)){
     matchCont <- as.character(matchfile[which(matchfile$test == tf),'controls'])
