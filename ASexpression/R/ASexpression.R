@@ -14,6 +14,8 @@ readFCres <- function(CountFile,ContSampleNames,TestSampleNames){
 }
 
 runDESeq <- function(fcres,design.cont,design.test){ #design = c(MatOverPat,PatOverMat)
+  source("http://bioconductor.org/biocLite.R")
+  if(!(require('DESeq2'))) biocLite('DESeq2')
   library('DESeq2')
   contMatrix <- design.cont
   testMatrix <- design.test
@@ -65,6 +67,11 @@ filterByControls <- function(DESeqResultList,matchfile,padjCutoff = 0.01){
 
 makeSomePlots <- function(DESeqOutputList,ControlFilteredOutput,compareGroup = "MatOverPat"){
   #plot PCA
+  if(!(require('gridExtra'))) install.packages('gridExtra')
+  if(!(require('plyr'))) install.packages('plyr')
+  if(!(require('reshape'))) install.packages('reshape')
+  if(!(require('ggplot2'))) install.packages('ggplot2')
+  
   library(gridExtra)
   library(plyr)
   library(reshape)
@@ -111,6 +118,8 @@ pathwayEnrichment <- function(ControlFilteredOutput,unfilteredOutput,organism="m
   source("http://bioconductor.org/biocLite.R")
   if(!(require('goseq'))) biocLite('goseq')
   if(!(require('KEGGREST'))) biocLite('KEGGREST')
+  if(!(require('org.Mm.eg.db'))) biocLite('org.Mm.eg.db')
+  
   library('goseq')
   library('KEGGREST')  
   keggid2name <- keggList("pathway", "mmu")
