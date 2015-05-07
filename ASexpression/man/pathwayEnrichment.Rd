@@ -15,6 +15,9 @@ pathwayEnrichment(ControlFilteredOutput, organism = "mmu")
   \item{ControlFilteredOutput}{
 output of "filterByControls" command
 }
+  \item{unfilteredOutput}{
+unfiltered results for background. output of "pullResults" command
+}
   \item{organism}{
 three word kegg code for organism, eg. mmu, hsa. default = "mmu"
 }

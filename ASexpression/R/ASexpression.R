@@ -92,11 +92,11 @@ makeSomePlots <- function(DESeqOutputList,ControlFilteredOutput,compareGroup = "
     labs(x = "Sample", y = "No. of Genes",fill = "Status",title = "No. of Genes with Change in Allelic Expression")
 }
 
-pathwayEnrichment <- function(ControlFilteredOutput,organism="mmu"){
+pathwayEnrichment <- function(ControlFilteredOutput,unfilteredOutput,organism="mmu"){
   GOSeqInput = list()
   for(n in names(ControlFilteredOutput)){
-    undiff <-rep(0,length(setdiff(rownames(ase.results$test[[n]]),rownames(ControlFilteredOutput[[n]])) ))
-    names(undiff) <- setdiff(rownames(ase.results$test[[n]]),rownames(ControlFilteredOutput[[n]]))
+    undiff <-rep(0,length(setdiff(rownames(unfilteredOutput$test[[n]]),rownames(ControlFilteredOutput[[n]])) ))
+    names(undiff) <- setdiff(rownames(unfilteredOutput$test[[n]]),rownames(ControlFilteredOutput[[n]]))
     # had to create another vector undiff and add to the input, as GOSeq needs all genes as input  
     GOSeqInput[[n]]$up <- as.integer(ControlFilteredOutput[[n]]$log2FoldChange > 0)
     names(GOSeqInput[[n]]$up) <- rownames(ControlFilteredOutput[[n]])
@@ -108,9 +108,11 @@ pathwayEnrichment <- function(ControlFilteredOutput,organism="mmu"){
   
   
   # Using GOSeq for pathway enrichment analysis
+  source("http://bioconductor.org/biocLite.R")
+  if(!(require('goseq'))) biocLite('goseq')
+  if(!(require('KEGGREST'))) biocLite('KEGGREST')
   library('goseq')
-  library('KEGGREST')
-  
+  library('KEGGREST')  
   keggid2name <- keggList("pathway", "mmu")
   names(keggid2name) <- sapply(names(keggid2name), substring, 9)
   
