@@ -1,0 +1,9 @@
+Package: ASexpression
+Type: Package
+Title: calculate Allele-specific expression using featureCount output
+Version: 0.1
+Date: 2015-05-07
+Author: Vivek Bhardwaj
+Maintainer: Vivek Bhardwaj <bhardwaj@ie-freiburg.mpg.de>
+Description: part of the allele-specific mapping and analysis package.
+License: GPL 2.0
