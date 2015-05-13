@@ -35,7 +35,7 @@ createDesignMatrix <- function(fcres, SampleNames, baseAllele = "CASTEiJ"){
 }
 
 runDESeq <- function(fcres,design, baseAllele = "CASTEiJ",topAllele = "129S1",fdrCutoff=0.01,
-                     autodesigned = FALSE, SampleNames){ 
+                     autodesigned = FALSE, SampleNames = NULL){ 
   source("http://bioconductor.org/biocLite.R")
   if(!(require('DESeq2'))) biocLite('DESeq2')
   library('DESeq2')
