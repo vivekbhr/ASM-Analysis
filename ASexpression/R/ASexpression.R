@@ -47,11 +47,11 @@ runDESeq <- function(fcres,design, baseAllele = "CASTEiJ",topAllele = "129S1",fd
     } 
     print("Using external matrix")
     print("setting factors and levels for DESeq")
+    for(n in names(design)) colnames(design[[n]]) = c("condition","allele")
     i = 0
     for(n in names(design)){
       i = i +1
       Control = as.character(SampleNames[i,2])
-      colnames(design[[n]]) = c("condition","allele")
       design[[n]]$condition = relevel(as.factor(condition),Control) 
       design[[n]]$allele = relevel(as.factor(allele),baseAllele)
     } 
