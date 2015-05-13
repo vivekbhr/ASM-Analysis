@@ -52,7 +52,7 @@ runDESeq <- function(fcres,design, baseAllele = "CASTEiJ",topAllele = "129S1",fd
       i = i +1
       Control = as.character(SampleNames[i,2])
       colnames(design[[n]]) = c("condition","allele")
-      design[[n]]$condition = relevel(as.factor(condition),Control), 
+      design[[n]]$condition = relevel(as.factor(condition),Control) 
       design[[n]]$allele = relevel(as.factor(allele),baseAllele)
     } 
   } else if(autodesigned == TRUE) {
