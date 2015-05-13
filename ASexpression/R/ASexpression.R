@@ -1,119 +1,129 @@
 
 # library "ASexpression"
 # Author: Vivek Bhardwaj, MPI-IE
-# Date: 7th May 2015
+# Date: 13th May 2015
 
 
-readFCres <- function(CountFile,ContSampleNames,TestSampleNames){
+readFCres <- function(CountFile,SampleNames){
   fc.asgenes <- read.table(CountFile,header=T,sep="\t",row.names= 1)
-  contNames <- as.character(read.delim(ContSampleNames,sep="\n",header=F)$V1) # samplenames should be given as a file
-  testNames <- as.character(read.delim(TestSampleNames,sep="\n",header=F)$V1) # samplenames should be given as a file
-  fcres <- list(cont = fc.asgenes[grep(paste(contNames,collapse = "|"),colnames(fc.asgenes))],
-                test = fc.asgenes[grep(paste(testNames,collapse = "|"),colnames(fc.asgenes))])  
+  
+  print("Separating samples by Control-Test pairs.")
+  fcres <- list()
+  for(i in 1:nrow(SampleNames)){
+    tf = as.character(SampleNames[i,1])
+    set <- as.character(t(SampleNames[i,]))
+    fcres[[tf]] <- fc.asgenes[grep(paste(set,collapse = "|"),colnames(fc.asgenes))]
+  }
   return(fcres)
 }
 
-runDESeq <- function(fcres,design.cont,design.test){ #design = c(MatOverPat,PatOverMat)
+createDesignMatrix <- function(fcres, SampleNames, baseAllele = "CASTEiJ"){
+  design <- list()
+  i = 0
+  for(n in names(fcres)){
+    i = i+1
+    rownames <- colnames(fcres[[n]])
+    condition <- gsub('(.*)_[0-9]_(.*)','\\1',colnames(fcres[[n]]))
+    allele <- as.factor(gsub('(.*)_[0-9]_(.*)','\\2',colnames(fcres[[n]])))
+    Control = as.character(SampleNames[i,2])
+    
+    design[[n]] <- data.frame(row.names = rownames, 
+                              condition = relevel(as.factor(condition),Control), 
+                              allele = relevel(as.factor(allele),baseAllele))
+  }
+  return(design)
+}
+
+runDESeq <- function(fcres,design, baseAllele = "CASTEiJ",topAllele = "129S1",fdrCutoff=0.01,
+                     autodesigned = FALSE, SampleNames){ 
   source("http://bioconductor.org/biocLite.R")
   if(!(require('DESeq2'))) biocLite('DESeq2')
   library('DESeq2')
-  contMatrix <- design.cont
-  testMatrix <- design.test
+  if(autodesigned == FALSE){
+    if(is.data.frame(design)){
+      listname = as.character(SampleNames[1,1])
+      design = list(name = design)
+      names(design) = listname
+    } 
+    print("Using external matrix")
+    print("setting factors and levels for DESeq")
+    i = 0
+    for(n in names(design)){
+      i = i +1
+      Control = as.character(SampleNames[i,2])
+      colnames(design[[n]]) = c("condition","allele")
+      design[[n]]$condition = relevel(as.factor(condition),Control), 
+      design[[n]]$allele = relevel(as.factor(allele),baseAllele)
+    } 
+  } else if(autodesigned == TRUE) {
+    print("Using autodesigned matrix")
+  }else stop("Please choose TRUE or FALSE")
   
-  contMatrix$design = paste(design.cont$sample,design.cont$allele,sep="_")
-  testMatrix$design = paste(design.test$sample,design.test$allele,sep="_")
   
-  contMatrix$design <- as.factor(contMatrix$design)
-  testMatrix$design <- as.factor(testMatrix$design)
-  sampList <- list(cont = DESeqDataSetFromMatrix(countData = as.matrix(fcres$cont),colData = contMatrix, design = ~ design),
-                   test = DESeqDataSetFromMatrix(countData = as.matrix(fcres$test),colData = testMatrix, design = ~ design))
-  sampList <- list(cont = DESeq(sampList$cont), test= DESeq(sampList$test))
-  return(sampList)
-}
-
-pullResults <- function(DESeqOutputList,maternal="129S1",paternal="CASTEiJ",
-                        compareGroup = "MatOverPat", design.cont, design.test){
-  design.cont$design = paste(design.cont$sample,design.cont$allele,sep="_")
-  design.test$design = paste(design.test$sample,design.test$allele,sep="_")
+  sampList = list()
+  for(name in names(fcres)){
+    sampList[[name]] <- DESeqDataSetFromMatrix(fcres[[name]],design[[name]],design = ~ condition + allele + condition:allele)
+    sampList[[name]] <- DESeq(sampList[[name]],betaPrior = FALSE)  
+  }
   
-  biglist <- list(cont = design.cont[!duplicated(design.cont$design),],
-                  test = design.test[!duplicated(design.test$design),])
-  
+  print("DESeq finished. Now extracting results.")
   output <- list()
-  for(group in names(biglist)){
-    output[[group]] <- list()
-    for(name in unique(biglist[[group]]$sample)){
-      matSample = paste(name,maternal,sep="_")
-      patSample = paste(name,paternal,sep="_")
-      if(compareGroup == "MatOverPat") testSet <- c(matSample,patSample) else testSet <- c(patSample,matSample)
-      contrasts =  c("design",testSet)
-      output[[group]][[name]] = results(DESeqOutputList[[group]],contrast = contrasts, cooksCutoff = FALSE,alpha = 0.01)
-    }
+  for(name in names(sampList)){
+    query = paste0("condition",name,".allele",topAllele)
+    output[[name]] = results(sampList[[name]], name = query, cooksCutoff = FALSE,alpha = fdrCutoff)
   }
-  return(output)
+  
+  allOut <- list(dataSet = sampList, Results = output)
+  return(allOut)
 }
 
-filterByControls <- function(DESeqResultList,matchfile,padjCutoff = 0.01){
-  diff.unique = list()
-  for(tf in names(DESeqResultList$test)){
-    matchCont <- as.character(matchfile[which(matchfile$test == tf),'controls'])
-    diffgenes <- subset(as.data.frame(DESeqResultList$test[[tf]]), padj < padjCutoff)
-    diffgenes.cont <- subset(as.data.frame(DESeqResultList$cont[[matchCont]]),padj < padjCutoff)
-    uniqueToTF <- setdiff(row.names(diffgenes),row.names(diffgenes.cont))
-    diff.unique[[tf]] <- diffgenes[which(row.names(diffgenes) %in% uniqueToTF),]
-  }
-  return(diff.unique)
-}
-
-makeSomePlots <- function(DESeqOutputList,ControlFilteredOutput,compareGroup = "MatOverPat"){
+makeSomePlots <- function(DESeqOutputList,baseAllele = "CASTEiJ",topAllele = "129S1",fdrCutoff=0.01){
   #plot PCA
-  if(!(require('gridExtra'))) install.packages('gridExtra')
+  #if(!(require('gridExtra'))) install.packages('gridExtra')
   if(!(require('plyr'))) install.packages('plyr')
   if(!(require('reshape'))) install.packages('reshape')
   if(!(require('ggplot2'))) install.packages('ggplot2')
   
-  library(gridExtra)
+  #library(gridExtra)
   library(plyr)
   library(reshape)
   library(ggplot2)
+  
   PCA <- list()
-  for(n in names(DESeqOutputList)){
-    PCA[[n]] <- plotPCA(DESeqOutputList[[n]],intgroup = "design")
+  for(n in names(DESeqOutputList$dataSet)){
+    PCA[[n]] <- plotPCA(DESeqOutputList$dataSet[[n]],intgroup = c("condition","allele"))
   }
-  grid.arrange(PCA[[1]],PCA[[2]],ncol=2, main= "PCA of samples")
   
   # plot The filtered output stats
   stats <- list()
-  for(tf in names(ControlFilteredOutput)){
-    if(compareGroup == "MatOverPat"){
-      stats[[tf]]$Maternal_Biased <- length(which(ControlFilteredOutput[[tf]]$log2FoldChange > 0)) 
-      stats[[tf]]$Paternal_Biased <- length(which(ControlFilteredOutput[[tf]]$log2FoldChange < 0))  
-    }else{
-      stats[[tf]]$Maternal_Biased <- length(which(ControlFilteredOutput[[tf]]$log2FoldChange < 0)) 
-      stats[[tf]]$Paternal_Biased <- length(which(ControlFilteredOutput[[tf]]$log2FoldChange > 0))
-    }
+  for(tf in names(DESeqOutputList$Results)){
+  stats[[tf]] = data.frame(Allele = c(topAllele,baseAllele),
+                           Biased.genes = c(nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange > 0 & padj < 0.01)),
+                                            nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange < 0 & padj < 0.01)))
+  )
   }
   stats <- ldply(stats,as.data.frame)
-  stats <- melt(stats)
-  ggplot(stats,aes(.id,value,fill=variable,group=variable)) + geom_bar(stat = "identity",position = "dodge") +
-    labs(x = "Sample", y = "No. of Genes",fill = "Status",title = "No. of Genes with Change in Allelic Expression")
+  plot <- ggplot(stats,aes(.id,Biased.genes,fill=Allele,group=Allele)) + geom_bar(stat = "identity",position = "dodge") +
+              labs(x = "Sample", y = "No. of Genes",fill = "Bias towards",title = "No. of Genes with Change in Allelic Expression")
+return(plot)
 }
 
-pathwayEnrichment <- function(ControlFilteredOutput,unfilteredOutput,organism="mmu"){
+
+pathwayEnrichment <- function(DESeqOutputList,organism="mmu",fdrCutoff=0.01){
+  
+  print("preparing sample for Input")
   GOSeqInput = list()
-  for(n in names(ControlFilteredOutput)){
-    undiff <-rep(0,length(setdiff(rownames(unfilteredOutput$test[[n]]),rownames(ControlFilteredOutput[[n]])) ))
-    names(undiff) <- setdiff(rownames(unfilteredOutput$test[[n]]),rownames(ControlFilteredOutput[[n]]))
-    # had to create another vector undiff and add to the input, as GOSeq needs all genes as input  
-    GOSeqInput[[n]]$up <- as.integer(ControlFilteredOutput[[n]]$log2FoldChange > 0)
-    names(GOSeqInput[[n]]$up) <- rownames(ControlFilteredOutput[[n]])
-    GOSeqInput[[n]]$up <- c(GOSeqInput[[n]]$up,undiff)
-    GOSeqInput[[n]]$down <- as.integer(ControlFilteredOutput[[n]]$log2FoldChange < 0)
-    names(GOSeqInput[[n]]$down) <- rownames(ControlFilteredOutput[[n]])
-    GOSeqInput[[n]]$down <- c(GOSeqInput[[n]]$down,undiff)
+  for(n in names(DESeqOutputList$Results)){
+    result = DESeqOutputList$Results[[n]] 
+    GOSeqInput[[n]]$up <- as.integer(result$padj < fdrCutoff & result$log2FoldChange > 0)
+    names(GOSeqInput[[n]]$up) <- rownames(result)
+    GOSeqInput[[n]]$up = na.omit(GOSeqInput[[n]]$up)
+    GOSeqInput[[n]]$down <- as.integer(result$padj < fdrCutoff & result$log2FoldChange < 0)
+    names(GOSeqInput[[n]]$down) <- rownames(result)
+    GOSeqInput[[n]]$down = na.omit(GOSeqInput[[n]]$down)
   }
   
-  
+
   # Using GOSeq for pathway enrichment analysis
   source("http://bioconductor.org/biocLite.R")
   if(!(require('goseq'))) biocLite('goseq')
@@ -121,7 +131,8 @@ pathwayEnrichment <- function(ControlFilteredOutput,unfilteredOutput,organism="m
   if(!(require('org.Mm.eg.db'))) biocLite('org.Mm.eg.db')
   
   library('goseq')
-  library('KEGGREST')  
+  library('KEGGREST')
+  print("Running Enrichment Test")
   keggid2name <- keggList("pathway", "mmu")
   names(keggid2name) <- sapply(names(keggid2name), substring, 9)
   
@@ -140,3 +151,8 @@ pathwayEnrichment <- function(ControlFilteredOutput,unfilteredOutput,organism="m
   GOSEQ <- lapply(GOSEQ, function(x) x = ldply(x,data.frame))
   return(GOSEQ)
 }
+
+
+
+
+

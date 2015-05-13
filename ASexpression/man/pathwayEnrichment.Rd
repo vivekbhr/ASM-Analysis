@@ -2,24 +2,24 @@
 \alias{pathwayEnrichment}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-plot pathway enrichment of the control filtered output
+plot pathway enrichment of the DESeq output
 }
 \description{
-takes as input the output of "filterByControls" command and gives enriched pathway for each TF as a list object.
+takes as input the output of "runDESeq" command and gives enriched pathway for each TF as a list object.
 }
 \usage{
-pathwayEnrichment(ControlFilteredOutput, organism = "mmu")
+pathwayEnrichment(DESeqOutputList,organism="mmu",fdrCutoff=0.01)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{ControlFilteredOutput}{
-output of "filterByControls" command
-}
-  \item{unfilteredOutput}{
-unfiltered results for background. output of "pullResults" command
+  \item{DESeqOutputList}{
+output of "runDESeq" command
 }
   \item{organism}{
 three word kegg code for organism, eg. mmu, hsa. default = "mmu"
+}
+  \item{fdrCutoff}{
+fdrCutoff for DESeq outputs to plot the results
 }
 }
 \details{
@@ -48,7 +48,7 @@ Vivek Bhardwaj
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-pathways <- pathwayEnrichment(ControlFilteredOutput = diff.unique)
+pathways <- pathwayEnrichment(DESeqOutputList,organism="mmu",fdrCutoff=0.01)
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

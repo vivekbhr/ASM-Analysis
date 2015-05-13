@@ -8,19 +8,17 @@ read featurecount output with Allele-specific reads
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-readFCres(CountFile, ContSampleNames, TestSampleNames)
+readFCres(CountFile, SampleNames)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{CountFile}{
 Raw featureCounts output file, tab seperated with headers.
 }
-  \item{ContSampleNames}{
-A text file with the name of controls(scrambled/Wildtype) samples, seperated by newline.
+  \item{SampleNames}{
+A dataframe with two columns, with name/alias of Test (eg. Knockdown) and the corresponding matching Control (eg. Wildtype).
 }
-  \item{TestSampleNames}{
-A text file with the name of Test(knockdown) samples, seperated by newline.
-}
+
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
@@ -48,7 +46,8 @@ Vivek Bhardwaj
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-fcres.ase <- readFCres(CountFile = "~/Desktop/featCount_genes_genesCollapsed_RNAseqSamples.txt",ContSampleNames = "~/Desktop/contnames.txt",TestSampleNames = "~/Desktop/samplenames.txt")
+samplenames <- data.frame(tf = c("Msl1","MOF","NSL3"), cont = c("ScrM","ScrT","ScrT"))
+fcres.ase <- readFCres(CountFile = "~/Desktop/featureCount_out.txt",SampleNames = samplenames)
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

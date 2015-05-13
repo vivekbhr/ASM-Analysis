@@ -8,20 +8,27 @@ plot PCA of samples and the number of ASE genes after filtering
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-makeSomePlots(DESeqOutputList, ControlFilteredOutput, compareGroup = "MatOverPat")
+makeSomePlots(DESeqOutputList,baseAllele = "CASTEiJ",topAllele = "129S1",fdrCutoff=0.01)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{DESeqOutputList}{
 output of "runDESeq " command
 }
-  \item{ControlFilteredOutput}{
-output of filterbyControls command.
+  \item{baseAllele}{
+base level allele for comparison. eg. to count 129S1 over CASTEiJ, baseAllele = "CASTEiJ"
 }
-  \item{compareGroup}{
-same as the one used for "pullResults" command
+
+  \item{topAllele}{
+top level allele for comparison. eg. to count 129S1 over CASTEiJ, baseAllele = "129S1"
 }
+
+  \item{fdrCutoff}{
+FDR cutoff for DESeq results
 }
+
+}
+
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
@@ -48,8 +55,9 @@ Vivek Bhardwaj
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-makeSomePlots(DESeqOutputList = ase.deseq,ControlFilteredOutput = diff.unique,compareGroup = "MatOverPat")
+diffExpPlots <- makeSomePlots(DESeqOutputList,baseAllele = "CASTEiJ",topAllele = "129S1",fdrCutoff=0.01)
 
+# diffexpPlots shows the number of genes detected with bias for each allele. On top of that you get PCA plot on screen
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
