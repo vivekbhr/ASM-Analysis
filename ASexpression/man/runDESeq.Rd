@@ -21,7 +21,7 @@ base level allele for comparison. eg. to count 129S1 over CASTEiJ, baseAllele = 
 }
 
   \item{topAllele}{
-top level allele for comparison. eg. to count 129S1 over CASTEiJ, baseAllele = "129S1"
+top level allele for comparison. eg. to count 129S1 over CASTEiJ, topAllele = "129S1"
 }
 
   \item{fdrCutoff}{

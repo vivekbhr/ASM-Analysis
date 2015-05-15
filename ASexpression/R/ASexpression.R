@@ -153,6 +153,41 @@ pathwayEnrichment <- function(DESeqOutputList,organism="mmu",fdrCutoff=0.01){
 }
 
 
+writeOutput <- function(DESeqOutputList, fdrCutoff = 0.01, baseAllele = "CASTEiJ",topAllele = "129S1", 
+                        autoAnnotate = TRUE, species = "Mus musculus", localGTF = NULL){
+  results <- DESeqOutputList$Results
+  
+  if(autoAnnotate == TRUE){
+    
+    print("Fetching annotations from ENSEMBL")
+    if(!(require('biomaRt'))) biocLite("biomaRt")
+    library('biomaRt')
+    mart <- useMart("ensembl", path="/biomart/martservice")
+    dataset <- listDatasets(mart)
+    dataset <- as.character(dataset[grep(species,dataset[,2]),1])
+    mart <- useDataset(dataset, mart=mart)
+    info <- getBM(attributes=c("ensembl_gene_id", "chromosome_name", "strand", "start_position", 
+                               "end_position", "gene_biotype","external_gene_name"), mart=mart)
+    info$strand <- gsub("-1","-",info$strand)
+    info$strand <- gsub("1","+",info$strand)
+  } else {
+    print("Using local GTF file. Hoping it has ENSG ids.")
+    info <- read.table(file = localGTF,sep="\t",header=T)
+    if(unique(grepl("ENS",info[,1])) == TRUE){
+      print("File looks ok!")
+    }else{
+      warning("Wait! looks like first column doesn't have ENSEMBL ids. You might get empty/truncated output")
+    }
+  }
+  
+  for(name in names(results)){
+    results[[name]] <- merge(results[[name]],info,by.x = 0,by.y=1)
+    results[[name]] <- subset(results[[name]],padj < .(fdrCutoff))
+    results[[name]]$Status <- ifelse(results[[name]]$log2FoldChange < 0 , paste0(baseAllele,"_biased"), paste0(topAllele,"_biased"))
+    write.table(results[[name]],file = paste0(name,"allelicBias_Output.txt"),sep="\t",quote=F,row.names=F,col.names=T)
+    print(paste0("Output written as ",name,"_allelicBias_Output.txt"))
+  }
+}
 
 
 
