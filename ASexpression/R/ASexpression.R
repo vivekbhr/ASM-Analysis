@@ -3,6 +3,36 @@
 # Author: Vivek Bhardwaj, MPI-IE
 # Date: 13th May 2015
 
+countFeatures <- function(SampleInfo,AutoParam="RNASeq",AnnotationFile,nthreads,outFileName=NULL,...){
+  SampleInfo[,5] = paste(SampleInfo[,2],SampleInfo[,3],SampleInfo[,4],sep="_")
+  names = as.character(SampleInfo[,1])
+  if(AutoParam == "RNASeq"){
+    print("Using Default options for Allele-Specific Expression")
+    
+    fcres <- featureCounts(files = names,annot.ext = AnnotationFile,
+                           isGTFAnnotationFile=TRUE,GTF.featureType="exon",GTF.attrType="gene_id",useMetaFeatures=TRUE,
+                           allowMultiOverlap=FALSE,isPairedEnd=TRUE,requireBothEndsMapped=FALSE,checkFragLength=FALSE,
+                           nthreads=nthreads,strandSpecific=2,minMQS=0,minReadOverlap=1,countSplitAlignmentsOnly=FALSE,
+                           countMultiMappingReads=FALSE,countPrimaryAlignmentsOnly=TRUE)
+  } else if(AutoParam == "ChIPSeq"){
+    print("Using Default options for Allele-Specific Binding")
+    
+    fcres <- featureCounts(files = names,annot.ext = AnnotationFile, 
+                           useMetaFeatures=TRUE,isPairedEnd=TRUE,requireBothEndsMapped=FALSE,
+                           allowMultiOverlap=FALSE,checkFragLength=FALSE,
+                           nthreads=nthreads,countPrimaryAlignmentsOnly=FALSE)
+    
+  } else {
+    print("Using user provided parameters")
+    fcres <- featureCounts(files = names,...)
+  }
+  
+  colnames(fcres$counts) <- SampleInfo[,5]
+  fcres$targets <- SampleInfo[,5]
+  write.table(fcres$counts,outFileName,sep="\t",row.names=F,col.names=F,quote=F)
+  return(fcres)
+}
+
 
 readFCres <- function(CountFile,SampleNames){
   fc.asgenes <- read.table(CountFile,header=T,sep="\t",row.names= 1)
