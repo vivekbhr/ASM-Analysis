@@ -128,8 +128,8 @@ makeSomePlots <- function(DESeqOutputList,baseAllele = "CASTEiJ",topAllele = "12
   stats <- list()
   for(tf in names(DESeqOutputList$Results)){
   stats[[tf]] = data.frame(Allele = c(topAllele,baseAllele),
-                           Biased.genes = c(nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange > 0 & padj < 0.01)),
-                                            nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange < 0 & padj < 0.01)))
+                           Biased.genes = c(nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange > 0 & padj < .(fdrCutoff) )),
+                                            nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange < 0 & padj < .(fdrCutoff) )))
   )
   }
   stats <- ldply(stats,as.data.frame)
