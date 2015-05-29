@@ -5,6 +5,6 @@ Version: 0.1
 Date: 2015-05-07
 Author: Vivek Bhardwaj
 Maintainer: Vivek Bhardwaj <bhardwaj@ie-freiburg.mpg.de>
-Depends: R (>= 3.2.0), DESeq2, plyr, reshape, ggplot2, goseq, KEGGREST, org.Mm.eg.db
+Depends: R (>= 3.2.0), DESeq2, plyr, reshape, ggplot2, goseq, KEGGREST, org.Mm.eg.db, biomaRt
 Description: part of the allele-specific mapping and analysis package.
 License: GPL 2.0

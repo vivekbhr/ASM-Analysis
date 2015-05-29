@@ -66,8 +66,8 @@ createDesignMatrix <- function(fcres, SampleNames, baseAllele = "CASTEiJ"){
 
 runDESeq <- function(fcres,design, baseAllele = "CASTEiJ",topAllele = "129S1",fdrCutoff=0.01,
                      autodesigned = FALSE, SampleNames = NULL){ 
-  source("http://bioconductor.org/biocLite.R")
-  if(!(require('DESeq2'))) biocLite('DESeq2')
+  #source("http://bioconductor.org/biocLite.R")
+  #if(!(require('DESeq2'))) biocLite('DESeq2')
   library('DESeq2')
   if(autodesigned == FALSE){
     if(is.data.frame(design)){
@@ -110,9 +110,9 @@ runDESeq <- function(fcres,design, baseAllele = "CASTEiJ",topAllele = "129S1",fd
 makeSomePlots <- function(DESeqOutputList,baseAllele = "CASTEiJ",topAllele = "129S1",fdrCutoff=0.01){
   #plot PCA
   #if(!(require('gridExtra'))) install.packages('gridExtra')
-  if(!(require('plyr'))) install.packages('plyr')
-  if(!(require('reshape'))) install.packages('reshape')
-  if(!(require('ggplot2'))) install.packages('ggplot2')
+  #if(!(require('plyr'))) install.packages('plyr')
+  #if(!(require('reshape'))) install.packages('reshape')
+  #if(!(require('ggplot2'))) install.packages('ggplot2')
   
   #library(gridExtra)
   library(plyr)
@@ -155,10 +155,10 @@ pathwayEnrichment <- function(DESeqOutputList,organism="mmu",fdrCutoff=0.01){
   
 
   # Using GOSeq for pathway enrichment analysis
-  source("http://bioconductor.org/biocLite.R")
-  if(!(require('goseq'))) biocLite('goseq')
-  if(!(require('KEGGREST'))) biocLite('KEGGREST')
-  if(!(require('org.Mm.eg.db'))) biocLite('org.Mm.eg.db')
+  #source("http://bioconductor.org/biocLite.R")
+  #if(!(require('goseq'))) biocLite('goseq')
+  #if(!(require('KEGGREST'))) biocLite('KEGGREST')
+  #if(!(require('org.Mm.eg.db'))) biocLite('org.Mm.eg.db')
   
   library('goseq')
   library('KEGGREST')
@@ -190,7 +190,7 @@ writeOutput <- function(DESeqOutputList, fdrCutoff = 0.01, baseAllele = "CASTEiJ
   if(autoAnnotate == TRUE){
     
     print("Fetching annotations from ENSEMBL")
-    if(!(require('biomaRt'))) biocLite("biomaRt")
+    #if(!(require('biomaRt'))) biocLite("biomaRt")
     library('biomaRt')
     mart <- useMart("ensembl", path="/biomart/martservice")
     dataset <- listDatasets(mart)
