@@ -135,7 +135,8 @@ makeSomePlots <- function(DESeqOutputList,baseAllele = "CASTEiJ",topAllele = "12
   stats <- ldply(stats,as.data.frame)
   plot <- ggplot(stats,aes(.id,Biased.genes,fill=Allele,group=Allele)) + geom_bar(stat = "identity",position = "dodge") +
               labs(x = "Sample", y = "No. of Genes",fill = "Bias towards",title = "No. of Genes with Change in Allelic Expression")
-return(plot)
+Allplots <- list (Numbers= plot, PCA= PCA)
+return(Allplots)
 }
 
 
@@ -212,7 +213,7 @@ writeOutput <- function(DESeqOutputList, fdrCutoff = 0.01, baseAllele = "CASTEiJ
   
   for(name in names(results)){
     results[[name]] <- merge(results[[name]],info,by.x = 0,by.y=1)
-    results[[name]] <- subset(results[[name]],padj < fdrCutoff)
+    results[[name]] <- subset(results[[name]],padj < .(fdrCutoff) )
     results[[name]]$Status <- ifelse(results[[name]]$log2FoldChange < 0 , paste0(baseAllele,"_biased"), paste0(topAllele,"_biased"))
     write.table(results[[name]],file = paste0(name,"allelicBias_Output.txt"),sep="\t",quote=F,row.names=F,col.names=T)
     print(paste0("Output written as ",name,"_allelicBias_Output.txt"))
