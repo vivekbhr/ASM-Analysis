@@ -68,7 +68,7 @@ runDESeq <- function(fcres,design, baseAllele = "CASTEiJ",topAllele = "129S1",fd
                      autodesigned = FALSE, SampleNames = NULL){ 
   #source("http://bioconductor.org/biocLite.R")
   #if(!(require('DESeq2'))) biocLite('DESeq2')
-  library('DESeq2')
+  #library('DESeq2')
   if(autodesigned == FALSE){
     if(is.data.frame(design)){
       listname = as.character(SampleNames[1,1])
@@ -115,9 +115,9 @@ makeSomePlots <- function(DESeqOutputList,baseAllele = "CASTEiJ",topAllele = "12
   #if(!(require('ggplot2'))) install.packages('ggplot2')
   
   #library(gridExtra)
-  library(plyr)
-  library(reshape)
-  library(ggplot2)
+  #library(plyr)
+  #library(reshape)
+  #library(ggplot2)
   
   PCA <- list()
   for(n in names(DESeqOutputList$dataSet)){
@@ -160,8 +160,8 @@ pathwayEnrichment <- function(DESeqOutputList,organism="mmu",fdrCutoff=0.01){
   #if(!(require('KEGGREST'))) biocLite('KEGGREST')
   #if(!(require('org.Mm.eg.db'))) biocLite('org.Mm.eg.db')
   
-  library('goseq')
-  library('KEGGREST')
+  #library('goseq')
+  #library('KEGGREST')
   print("Running Enrichment Test")
   keggid2name <- keggList("pathway", "mmu")
   names(keggid2name) <- sapply(names(keggid2name), substring, 9)
@@ -191,7 +191,7 @@ writeOutput <- function(DESeqOutputList, fdrCutoff = 0.01, baseAllele = "CASTEiJ
     
     print("Fetching annotations from ENSEMBL")
     #if(!(require('biomaRt'))) biocLite("biomaRt")
-    library('biomaRt')
+    #library('biomaRt')
     mart <- useMart("ensembl", path="/biomart/martservice")
     dataset <- listDatasets(mart)
     dataset <- as.character(dataset[grep(species,dataset[,2]),1])
