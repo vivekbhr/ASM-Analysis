@@ -1,7 +1,7 @@
 
 # library "ASexpression"
 # Author: Vivek Bhardwaj, MPI-IE
-# Date: 13th May 2015
+# First created: 13th May 2015
 
 countFeatures <- function(SampleInfo,AutoParam="RNASeq",AnnotationFile,nthreads,outFileName=NULL,...){
   SampleInfo[,5] = paste(SampleInfo[,2],SampleInfo[,3],SampleInfo[,4],sep="_")
@@ -9,7 +9,7 @@ countFeatures <- function(SampleInfo,AutoParam="RNASeq",AnnotationFile,nthreads,
   if(AutoParam == "RNASeq"){
     print("Using Default options for Allele-Specific Expression")
     
-    fcres <- featureCounts(files = names,annot.ext = AnnotationFile,
+    fcres <- Rsubread::featureCounts(files = names,annot.ext = AnnotationFile,
                            isGTFAnnotationFile=TRUE,GTF.featureType="exon",GTF.attrType="gene_id",useMetaFeatures=TRUE,
                            allowMultiOverlap=FALSE,isPairedEnd=TRUE,requireBothEndsMapped=FALSE,checkFragLength=FALSE,
                            nthreads=nthreads,strandSpecific=2,minMQS=0,minReadOverlap=1,countSplitAlignmentsOnly=FALSE,
@@ -17,14 +17,14 @@ countFeatures <- function(SampleInfo,AutoParam="RNASeq",AnnotationFile,nthreads,
   } else if(AutoParam == "ChIPSeq"){
     print("Using Default options for Allele-Specific Binding")
     
-    fcres <- featureCounts(files = names,annot.ext = AnnotationFile, 
+    fcres <- Rsubread::featureCounts(files = names,annot.ext = AnnotationFile, 
                            useMetaFeatures=TRUE,isPairedEnd=TRUE,requireBothEndsMapped=FALSE,
                            allowMultiOverlap=FALSE,checkFragLength=FALSE,
                            nthreads=nthreads,countPrimaryAlignmentsOnly=FALSE)
     
   } else {
     print("Using user provided parameters")
-    fcres <- featureCounts(files = names,...)
+    fcres <- Rsubread::featureCounts(files = names,...)
   }
   
   colnames(fcres$counts) <- SampleInfo[,5]
@@ -89,8 +89,9 @@ runDESeq <- function(fcres,design, baseAllele = "CASTEiJ",topAllele = "129S1",fd
   
   sampList = list()
   for(name in names(fcres)){
-    sampList[[name]] <- DESeqDataSetFromMatrix(fcres[[name]],design[[name]],design = ~ condition + allele + condition:allele)
-    sampList[[name]] <- DESeq(sampList[[name]],betaPrior = FALSE)  
+    sampList[[name]] <- DESeq::DESeqDataSetFromMatrix(fcres[[name]],design[[name]],
+                                                      design = ~ condition + allele + condition:allele)
+    sampList[[name]] <- DESeq::DESeq(sampList[[name]],betaPrior = FALSE)  
   }
   
   print("DESeq finished. Now extracting results.")
@@ -104,23 +105,31 @@ runDESeq <- function(fcres,design, baseAllele = "CASTEiJ",topAllele = "129S1",fd
   return(allOut)
 }
 
-makeSomePlots <- function(DESeqOutputList,baseAllele = "CASTEiJ",topAllele = "129S1",fdrCutoff=0.01){
+makeSomePlots <- function(DESeqOutputList,baseAllele = "CASTEiJ",topAllele = "129S1",fdrCutoff=0.01,excludeChr="chr12"){
   # plot PCA
   PCA <- list()
   for(n in names(DESeqOutputList$dataSet)){
-    PCA[[n]] <- plotPCA(DESeqOutputList$dataSet[[n]],intgroup = c("condition","allele"))
+    PCA[[n]] <- DESeq::plotPCA(DESeqOutputList$dataSet[[n]],intgroup = c("condition","allele"))
   }
   
   # plot The filtered output stats
   stats <- list()
   for(tf in names(DESeqOutputList$Results)){
-  stats[[tf]] = data.frame(Allele = c(topAllele,baseAllele),
-                           Biased.genes = c(nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange > 0 & padj < .(fdrCutoff) )),
-                                            nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange < 0 & padj < .(fdrCutoff) )))
-  )
+    if(is.null(excludeChr)){
+      stats[[tf]] = data.frame(Allele = c(topAllele,baseAllele),
+                               Biased.genes = c(nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange > 0 & padj < .(fdrCutoff) )),
+                                                nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange < 0 & padj < .(fdrCutoff) )))
+      )
+    } else {
+      stats[[tf]] = data.frame(Allele = c(topAllele,baseAllele),
+                               Biased.genes = c(nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange > 0 & padj < .(fdrCutoff) & chr != excludeChr)),
+                                                nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange < 0 & padj < .(fdrCutoff) & chr != excludeChr)))
+      )
+      
+    }
   }
-  stats <- ldply(stats,as.data.frame)
-  plot <- ggplot(stats,aes(.id,Biased.genes,fill=Allele,group=Allele)) + geom_bar(stat = "identity",position = "dodge") +
+  stats <- plyr::ldply(stats,as.data.frame)
+  plot <- ggplo2::ggplot(stats,aes(.id,Biased.genes,fill=Allele,group=Allele)) + geom_bar(stat = "identity",position = "dodge") +
               labs(x = "Sample", y = "No. of Genes",fill = "Bias towards",title = "No. of Genes with Change in Allelic Expression")
 Allplots <- list (Numbers= plot, PCA= PCA)
 return(Allplots)
@@ -143,14 +152,14 @@ pathwayEnrichment <- function(DESeqOutputList,organism="mmu",fdrCutoff=0.01){
   
 
   print("Running Enrichment Test")
-  keggid2name <- keggList("pathway", "mmu")
+  keggid2name <- KEGGREST::keggList("pathway", "mmu")
   names(keggid2name) <- sapply(names(keggid2name), substring, 9)
   
   GOSEQ <- list()
   for(n in names(GOSeqInput)){
     for(cat in c('up','down')){
-      null_model <- nullp(GOSeqInput[[n]][[cat]], genome= "mm9",id="ensGene")
-      kegg.enrich <- goseq(null_model,genome = "mm9",id="ensGene",test.cats= c("KEGG"),method = "Wallenius")
+      null_model <- goseq::nullp(GOSeqInput[[n]][[cat]], genome= "mm9",id="ensGene")
+      kegg.enrich <- goseq::goseq(null_model,genome = "mm9",id="ensGene",test.cats= c("KEGG"),method = "Wallenius")
       kegg.fdrs <- p.adjust(kegg.enrich[, 2], method = "BH")
       kegg.enrich <- cbind(kegg.enrich, FDR = kegg.fdrs)
       kegg.enrich <- cbind(kegg.enrich, pathway = keggid2name[kegg.enrich$category])
@@ -158,24 +167,24 @@ pathwayEnrichment <- function(DESeqOutputList,organism="mmu",fdrCutoff=0.01){
     }
   }
   
-  GOSEQ <- lapply(GOSEQ, function(x) x = ldply(x,data.frame))
+  GOSEQ <- lapply(GOSEQ, function(x) x = plyr::ldply(x,data.frame))
   return(GOSEQ)
 }
 
 
 writeOutput <- function(DESeqOutputList, fdrCutoff = 0.01, baseAllele = "CASTEiJ",topAllele = "129S1", 
-                        autoAnnotate = TRUE, species = "Mus musculus", localGTF = NULL){
+                        autoAnnotate = TRUE, species = "Mus musculus", localGTF = NULL,excludeChr="chr12"){
   results <- DESeqOutputList$Results
   
   if(autoAnnotate == TRUE){
     
     print("Fetching annotations from ENSEMBL")
 
-    mart <- useMart("ensembl", path="/biomart/martservice")
-    dataset <- listDatasets(mart)
+    mart <- biomaRt::useMart("ensembl", path="/biomart/martservice")
+    dataset <- biomaRt::listDatasets(mart)
     dataset <- as.character(dataset[grep(species,dataset[,2]),1])
-    mart <- useDataset(dataset, mart=mart)
-    info <- getBM(attributes=c("ensembl_gene_id", "chromosome_name", "strand", "start_position", 
+    mart <- biomaRt::useDataset(dataset, mart=mart)
+    info <- biomaRt::getBM(attributes=c("ensembl_gene_id", "chromosome_name", "strand", "start_position", 
                                "end_position", "gene_biotype","external_gene_name"), mart=mart)
     info$strand <- gsub("-1","-",info$strand)
     info$strand <- gsub("1","+",info$strand)
@@ -193,7 +202,13 @@ writeOutput <- function(DESeqOutputList, fdrCutoff = 0.01, baseAllele = "CASTEiJ
     results[[name]] <- merge(results[[name]],info,by.x = 0,by.y=1)
     results[[name]] <- subset(results[[name]],padj < .(fdrCutoff) )
     results[[name]]$Status <- ifelse(results[[name]]$log2FoldChange < 0 , paste0(baseAllele,"_biased"), paste0(topAllele,"_biased"))
-    write.table(results[[name]],file = paste0(name,"allelicBias_Output.txt"),sep="\t",quote=F,row.names=F,col.names=T)
+    if(is.null(excludeChr)){
+      write.table(results[[name]],file = paste0(name,"allelicBias_Output.txt"),sep="\t",quote=F,row.names=F,col.names=T) 
+  } else {
+    write <- subset(results[[name]],chr != excludeChr)
+    write.table(write,file = paste0(name,"allelicBias_Output.txt"), sep="\t", quote=F, row.names=F, col.names=T) 
+  
+  }
     print(paste0("Output written as ",name,"_allelicBias_Output.txt"))
   }
 }
