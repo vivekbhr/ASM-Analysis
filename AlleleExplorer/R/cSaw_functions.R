@@ -1,0 +1,219 @@
+
+#### ~~~~ Functions to Run CSAW as part of AS analysis pipeline ~~~~ ####
+## Load the shit
+library(csaw)
+library(edgeR)
+library(org.Mm.eg.db)
+library(TxDb.Mmusculus.UCSC.mm9.knownGene)
+
+### Read files
+readfiles_chip <- function(csvFile = "testBAMs/testSampleSheet.csv", refAllele = "pat"){
+  
+  # Parse Sample sheet
+  samp <- read.csv(csvFile,header=TRUE,colClasses = c("character","character","factor","factor","factor","character"))
+  if(any(grepl("chip",samp[,1]))){
+    message("Extracting sample Info")
+    samp <- samp[which(grepl("chip",samp[,1])),]
+  } else stop("No Chip Samples found for diffBinding test. Check sample sheet")
+  
+  # readFiles using CSAW
+  bam.files <- samp[,6]
+  pe.param <- readParam(max.frag=400, pe="both") # use the param for pe reads
+  message("Counting reads in windows")
+  counts <- windowCounts(bam.files = bam.files,param=pe.param)
+  
+  # make model matrix for edgeR
+  design <- data.frame(row.names = samp[,2] , samp[,3:5]) ## Add: A warning if rownames not uniq
+  design[,2] <- relevel(design[,2],refAllele)
+  design <- model.matrix(~ allele * tf,data = design)
+  # output
+  return(list(windowCounts = counts, design = design, sampledata = samp))
+}
+
+### Make plots to select window size and pe-distance cutoffs
+
+makeQCplots_chip <- function(chipCountObject,outdir){
+  
+  ## Parse Sample data
+  samp <- chipCountObject$sampledata
+  bam.files <- samp[,6]
+  
+  ## Histogram to check frag size cutoff
+  message("Checking fragment sizes")
+  pdf(paste0(outdir,"/pefrag-sizes.pdf"))
+  out <- list(sapply(bam.files,function(x) getPESizes(x)))
+  #plot (change the number of plots)
+  for(i in seq(1,16,2)) hist(out[[1]][[i]], breaks=50, xlab="Fragment sizes (bp)",
+                             ylab="Frequency", main=paste0("sample_",i),col="steelblue") %>% 
+    abline(v=400, col="red",lwd = 3)
+  dev.off()
+  
+  ## Checking cross-correlation
+  message("Checking cross-correlation")
+  max.delay <- 500
+  dedup.on <- readParam(dedup=TRUE, minq=20)
+  x <- correlateReads(bam.files, max.delay, param=dedup.on)
+  #plot
+  pdf(paste0(outdir,"/peCross-correlation.pdf"))
+  plot(0:max.delay, x, type="l", ylab="CCF", xlab="Delay (bp)")
+  dev.off()
+  
+  ## Choosing appropriate window size
+  message("Checking appropriate window sizes")
+  plotwc <- function(curbam){
+    #print(curbam)
+    pe.param <- readParam(max.frag=400, pe="both") # use the param for pe reads
+    windowed <- windowCounts(curbam, spacing=50, width=50, param= pe.param, filter=20)
+    rwsms <- rowSums(assay(windowed))
+    maxed <- findMaxima(rowRanges(windowed), range=1000, metric=rwsms)
+    curbam.out <- profileSites(curbam, rowRanges(windowed)[maxed],
+                                        param=pe.param, weight=1/rwsms[maxed])
+    return(curbam.out)
+  }
+  collected <- lapply(bam.files,plotwc) # only plotted 4 bam.files[c(1,3,5,7)] for example
+  xranged <- as.integer(names(collected[[1]]))
+  # plot
+  pdf(paste0(outdir,"/peWindow-sizes.pdf"))
+  plot(xranged, collected[[1]], type="l", col="blue", xlim=c(-1000, 1000), lwd=2,
+       xlab="Distance (bp)", ylab="Relative coverage per base")
+  lines(xranged, collected[[2]], col="forestgreen", lwd=2)
+  lines(xranged, collected[[3]], col="grey20", lwd=2)
+  lines(xranged, collected[[4]], col="purple", lwd=2)
+  legend("topright", col=c("blue", "forestgreen","grey20","purple"),
+         paste0("Sample_",1:4), pch=16)
+  abline(v=c(-150,200), col="dodgerblue", lty=2)
+  dev.off()
+  
+}
+
+### Filtering using Input windows
+filterByInput_chip <- function(chipCountObject,priorCount = 5){
+        
+        # Parse Sample data
+        samp <- chipCountObject$sampledata
+        countdat <- chipCountObject$windowCounts
+        # Seperate control and chip samples
+        control <- samp[which(samp[,3] == "control"),6]
+        control <- countdat[,which(colData(countdat)$bam.files %in% control)]
+        chip <- samp[which(samp[,3] == "test"),6]
+        chip <- countdat[,which(colData(countdat)$bam.files %in% chip)]
+        # Filter chip by control counts
+        filter.stat <- filterWindows(chip, control, type="control", prior.count = priorCount) # min count in window should be 5
+        keep <- filter.stat$filter > log2(3) 
+        countdat <- countdat[keep,] # now "countdat" contains both input and chip counts, but filtered
+        
+        # return the same chipCountObject back, but this time filtered
+        chipCountObject$windowCounts <- countdat
+        return(chipCountObject)
+}
+
+
+### TMM normalize (get the normfactors out) using given window size
+tmmNormalize_chip <- function(chipCountObject,binsize = 10000, plotfile = "TMM_normalizedCounts.pdf"){
+        
+        # Parse Sample data
+        samp <- chipCountObject$sampledata
+        bam.files <- samp[,6]
+        # Get norm factors
+        demo <- windowCounts(bam.files, bin=TRUE, width = binsize)
+        normfacs <- normalize(demo)
+        
+        # plot normalized counts
+        pdf(plotfile)
+        par(mfrow=c(1, 3), mar=c(5, 4, 2, 1.5))
+        adj.counts <- cpm(asDGEList(demo), log=TRUE)
+        for (i in 1:(length(bam.files)-1)) {
+                cur.x <- adj.counts[,1]
+                cur.y <- adj.counts[,1+i]
+                smoothScatter(x=(cur.x+cur.y)/2+6*log2(10), y=cur.x-cur.y,xlab="A", ylab="M", main=paste("1 vs", i+1))
+                all.dist <- diff(log2(normfacs[c(i+1, 1)]))
+                abline(h=all.dist, col="red")
+        }
+        ## MDS plot to check for replicate variability
+        for (top in c(100, 500, 1000, 5000)) {
+                out <- plotMDS(adj.counts, main=top, col= samp[,4],labels=samp[,2], top=top)
+        }
+        dev.off()
+        
+        ## Return normfactors
+        chipCountObject$normFactors <- normfacs
+        return(chipCountObject)
+}
+
+
+### Test for Diff Bound windows using EdgeR (then merge windows into regions)
+
+getDBregions_chip <- function(chipCountObject,plotfile = NULL, tfname = "msl2"){
+        
+        # Make DGElist
+        y <- asDGEList(chipCountObject$windowCounts, norm.factors = chipCountObject$normFactors)
+        design <- chipCountObject$design
+        # Estimate dispersions
+        y <- estimateDisp(y, design)
+        o <- order(y$AveLogCPM)
+        fit <- glmQLFit(y, design, robust=TRUE)
+        # and plot dispersions
+        if(!(is.null(plotfile))){
+                pdf(plotfile)
+                par(mfrow=c(1,2))
+                plot(y$AveLogCPM[o], sqrt(y$trended.dispersion[o]), type="l", lwd=2,
+                     ylim=c(0, 1), xlab=expression("Ave."~Log[2]~"CPM"),
+                     ylab=("Biological coefficient of variation"))
+                plotQLDisp(fit)
+                dev.off()
+        }
+        
+        # TEST for DB windows
+        coef_one <- colnames(fit)[2] # it's the first coefficient that can be extracted (this will be the non-reference allele)
+        tf <- colnames(chipCountObject$sampledata)[5]
+        ## other coefs will be added above this, the names of 2nd coef have to be provided as tfname
+        results <- glmQLFTest(fit, coef = paste0(coef_one,":",tf,tfname))
+        
+        # Clustering DB windows into regions: Using quick and dirty method
+        merged <- mergeWindows(rowRanges(chipCountObject$windowCounts), tol=500L)
+        tabcom <- combineTests(merged$id, results$table) # get combined test p-value for merged windows
+        # Return all results
+        allout <- list(fit = fit, results = results, mergedRegions = merged, combinedPvalues = tabcom)
+        return(allout)
+}
+
+
+### Annotate and print the output regions
+
+writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE, 
+                             Txdb = TxDb.Mmusculus.UCSC.mm9.knownGene, Orgdb = org.Mm.eg.db){
+        # get merged regions
+        merged <- chipResultObject$mergedRegions
+        tabcom <- chipResultObject$combinedPvalues
+        ## adding gene annotation
+        if(annotation){
+                anno <- detailRanges(merged$region, txdb= Txdb,
+                                     orgdb=org.Mm.eg.db, promoter=c(3000, 1000), dist=5000)
+                anno.ranges <- detailRanges(txdb=TxDb.Mmusculus.UCSC.mm9.knownGene, orgdb = Orgdb)
+                
+                ## Print regions and genes as output
+                ofile <- gzfile(paste0(outfileName,".gz"), open="w")
+                write.table(as.data.frame(merged$region)[,1:3], tabcom, anno,
+                            file=ofile, row.names=FALSE, quote=FALSE, sep="\t")
+                close(ofile)
+                
+        } else {
+                ## Print regions as bed files
+                is.sig <- tabcom$FDR <= 0.05
+                test <- merged$region[is.sig]
+                test$score <- -10*log10(tabcom$FDR[is.sig])
+                names(test) <- paste0("region", 1:sum(is.sig))
+                export(test, paste0(outfileName,".bed"))
+                
+        }
+        
+}
+
+
+
+
+
+
+
+
+
