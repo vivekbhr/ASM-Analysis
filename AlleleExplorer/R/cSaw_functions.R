@@ -228,7 +228,8 @@ getDBregions_chip <- function(chipCountObject,plotfile = NULL, tfname = "msl2"){
 #' @param tfname which TF to extract results for (must match with the name in samplesheet)
 #' @return File with differentially bound regions
 #' @examples
-#' 
+#' writeOutput_chip(chipResultObject, outfileName, annotation = TRUE, 
+#' Txdb = TxDb.Mmusculus.UCSC.mm9.knownGene, Orgdb = org.Mm.eg.db)
 #' 
 
 writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE, 
