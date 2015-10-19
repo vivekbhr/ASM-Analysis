@@ -3,8 +3,19 @@
 # (c) Vivek Bhardwaj (bhardwaj@ie-freiburg.mpg.de)
 # First created: 13th May 2015
 
-### Read the Files and Count features for the RNA-Seq Samples
-
+#' Read the Files and Count features for the RNA-Seq Samples
+#'
+#' @param csvFile csvfile with sample information
+#' @param AnnotationFile GTF file
+#' @param nthreads Number of threads
+#' @param outfileName Specify output file
+#' @param refAllele Reference Allele (name must match the name in samplesheet)
+#' @param userParam Make it TRUE if you want to enter your own featurecounts parameters
+#' @return rnaCountObject : a list with counts and sampleinfo
+#' @examples
+#' countFeatures_rna(csvFile = "testBAMs/testSampleSheet.csv",AnnotationFile,nthreads,
+#' outfileName=NULL,refAllele = "pat",userParam = FALSE,...)
+#' 
 countFeatures_rna <- function(csvFile = "testBAMs/testSampleSheet.csv",AnnotationFile,nthreads,
                               outfileName=NULL,refAllele = "pat",userParam = FALSE,...){
   
@@ -60,7 +71,16 @@ countFeatures_rna <- function(csvFile = "testBAMs/testSampleSheet.csv",Annotatio
   return(fcres)
 }
 
-### Run DESeq2 with interaction design
+
+#' Run DESeq2 with interaction design
+#'
+#' @param rnaCountObject output from countFeatures_rna script
+#' @param fdrCutoff FDR cutoff for differential expression
+#' @param tfname Name of TF to get the differential expression (must match the name in samplesheet)
+#' @return rnaResultObject
+#' @examples
+#' alleleDiff_rna(rnaCountObject,fdrCutoff = 0.01,tfname = "mof")
+#' 
 
 alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){ 
   
@@ -83,7 +103,19 @@ alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){
   return(rnaCountObject)
 }
 
-### Write the output
+#' Write the output
+#'
+#' @param rnaResultObject output from alleleDiff_rna function
+#' @param annotateFrom either "dataset","ensembl" or NULL. telling where to annotate the output from
+#' @param species Species for annotation (if annotateFrom = "ensembl")
+#' @param excludeChr any chromosome to exclude from output
+#' @param fdrCutoff fdr cutoff (same as in previous script)
+#' @param outfileName File to write the output in
+#' @return csv file with output
+#' @examples
+#' writeOutput_rna(rnaResultObject,annotateFrom = "dataset", species = "Mus musculus",
+#' excludeChr = "chr12",fdrCutoff = 0.01,outfileName)
+#' 
 
 writeOutput_rna <- function(rnaResultObject,annotateFrom = "dataset", species = "Mus musculus",
                             excludeChr = "chr12",fdrCutoff = 0.01,outfileName){

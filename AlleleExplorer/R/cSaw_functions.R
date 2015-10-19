@@ -2,7 +2,14 @@
 #### ~~~~ Functions to Run CSAW as part of AS analysis pipeline ~~~~ ####
 ### (c) Vivek Bhardwaj (bhardwaj@ie-freiburg.mpg.de)
 
-### Read files
+#' Read the Files and Count windows for ChIP-Seq Samples
+#'
+#' @param csvFile csvfile with sample information
+#' @param refAllele Reference Allele (name must match the name in samplesheet)
+#' @return chipCountObject : a list with window counts and sampleinfo
+#' @examples
+#' readfiles_chip(csvFile = "testBAMs/testSampleSheet.csv", refAllele = "pat")
+#' 
 readfiles_chip <- function(csvFile = "testBAMs/testSampleSheet.csv", refAllele = "pat"){
   
   # Parse Sample sheet
@@ -28,7 +35,14 @@ readfiles_chip <- function(csvFile = "testBAMs/testSampleSheet.csv", refAllele =
   return(list(windowCounts = counts, design = design, sampledata = samp))
 }
 
-### Make plots to select window size and pe-distance cutoffs
+#' Make plots to select window size and pe-distance cutoffs
+#'
+#' @param chipCountObject output from readfiles_chip
+#' @param outdir output directory to write the plots
+#' @return chipCountObject : a list with window counts and sampleinfo
+#' @examples
+#' makeQCplots_chip(chipCountObject,outdir)
+#' 
 
 makeQCplots_chip <- function(chipCountObject,outdir){
   
@@ -84,7 +98,15 @@ makeQCplots_chip <- function(chipCountObject,outdir){
   
 }
 
-### Filtering using Input windows
+#' Filtering using Input windows
+#'
+#' @param chipCountObject output from readfiles_chip
+#' @param priorCount Minimum count cutoff for windows
+#' @return Filtered chipCountObject
+#' @examples
+#' filterByInput_chip(chipCountObject,priorCount = 5)
+#' 
+
 filterByInput_chip <- function(chipCountObject,priorCount = 5){
         
         # Parse Sample data
@@ -106,7 +128,17 @@ filterByInput_chip <- function(chipCountObject,priorCount = 5){
 }
 
 
-### TMM normalize (get the normfactors out) using given window size
+### 
+#' TMM normalize (get the normfactors out) using given window size
+#'
+#' @param chipCountObject output from filterByInput_chip
+#' @param binsize Size of bins to calculate the normalization factors
+#' @param plotfile file with output plots
+#' @return Normalized chipCountObject
+#' @examples
+#' tmmNormalize_chip(chipCountObject,binsize = 10000, plotfile = "TMM_normalizedCounts.pdf")
+#' 
+
 tmmNormalize_chip <- function(chipCountObject,binsize = 10000, plotfile = "TMM_normalizedCounts.pdf"){
         
         # Parse Sample data
@@ -139,7 +171,16 @@ tmmNormalize_chip <- function(chipCountObject,binsize = 10000, plotfile = "TMM_n
 }
 
 
-### Test for Diff Bound windows using EdgeR (then merge windows into regions)
+### 
+#' Test for Diff Bound windows using EdgeR (then merge windows into regions)
+#'
+#' @param chipCountObject output from tmmNormalize_chip
+#' @param plotfile file with output plots
+#' @param tfname which TF to extract results for (must match with the name in samplesheet)
+#' @return chipResultObject with differentially bound regions
+#' @examples
+#' getDBregions_chip(chipCountObject,plotfile = NULL, tfname = "msl2")
+#' 
 
 getDBregions_chip <- function(chipCountObject,plotfile = NULL, tfname = "msl2"){
         
@@ -176,7 +217,19 @@ getDBregions_chip <- function(chipCountObject,plotfile = NULL, tfname = "msl2"){
 }
 
 
-### Annotate and print the output regions
+### 
+#' Annotate and print the output regions
+#'
+#' @param chipResultObject output from getDBregions_chip
+#' @param outfileName name of output files
+#' @param annotation TRUE if you want to annotate the regions
+#' @param Txdb Txdb object to annotate the output (if annotation = TRUE)
+#' @param Orgdb orgdb object to annotate the output (if annotation = TRUE)
+#' @param tfname which TF to extract results for (must match with the name in samplesheet)
+#' @return File with differentially bound regions
+#' @examples
+#' 
+#' 
 
 writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE, 
                              Txdb = TxDb.Mmusculus.UCSC.mm9.knownGene, Orgdb = org.Mm.eg.db){
