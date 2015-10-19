@@ -82,7 +82,7 @@ countFeatures_rna <- function(csvFile = "testBAMs/testSampleSheet.csv",Annotatio
 #' alleleDiff_rna(rnaCountObject,fdrCutoff = 0.01,tfname = "mof")
 #' 
 
-alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){ 
+alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof",plotfile = "DESeq_plots.pdf"){ 
   
   countdata <- rnaCountObject$counts
   designmat <- rnaCountObject$design
@@ -101,6 +101,61 @@ alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){
   rnaCountObject$DEdataSet <- dds
   rnaCountObject$DEresult <- ddr
   return(rnaCountObject)
+}
+
+#' Make QC and result plots for DESeq2 output
+#'
+#' @param rnaResultObject Output of alleleDiff_rna
+#' @param outfile Output file to write back the result
+#' @return A pdf file with QC and results plots
+#' @examples
+#' plotResults_rna(rnaResultObject,outfile = "resultPlots_RNA.pdf")
+#' 
+## Function requires : vsn, DESeq2 > 1.10, pheatmap, RColorBrewer, ggplot2
+
+plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf"){
+  dds <- rnaResultObject$DEdataSet
+  ddr <- rnaResultObject$DEresult
+  rld <- DESeq2::rlog(dds) #rlog transform
+  vsd <- DESeq2::varianceStabilizingTransformation(dds) # vst transform
+  
+  pdf(outfile)
+  # Plot transformed counts
+  notAllZero <- (rowSums(counts(dds))>0)
+  par(mfrow = c(1,3))
+  vsn::meanSdPlot(log2(counts(dds,normalized=TRUE)[notAllZero,] + 1))
+  vsn::meanSdPlot(assay(rld[notAllZero,]))
+  vsn::meanSdPlot(assay(vsd[notAllZero,]))
+  par(mfrow = c(1,1))
+  # Plot heatmap of count matrix
+  select <- order(rowMeans(counts(dds,normalized=TRUE)),decreasing=TRUE)[1:20]
+  df <- as.data.frame(colData(dds)[,c("condition","allele")])
+  pheatmap::pheatmap(assay(rld)[select,], cluster_rows=FALSE,cluster_cols=FALSE, annotation_col=df)
+  pheatmap::pheatmap(assay(vsd)[select,], cluster_rows=FALSE, show_rownames=FALSE,
+                     cluster_cols=FALSE, annotation_col=df)
+  
+  # Heatmap of sample to sample dist
+  sampleDists <- dist(t(assay(rld)))
+  sampleDistMatrix <- as.matrix(sampleDists)
+  rownames(sampleDistMatrix) <- paste(rld$condition, rld$type, sep="-")
+  colnames(sampleDistMatrix) <- NULL
+  colors <- colorRampPalette( rev(RColorBrewer::brewer.pal(9, "Blues")) )(255)
+  pheatmap::pheatmap(sampleDistMatrix,
+                     clustering_distance_rows=sampleDists,
+                     clustering_distance_cols=sampleDists,
+                     col=colors)
+  
+  # PCA plot of all samples
+  data <- plotPCA(rld, intgroup=c("condition", "allele"), returnData=TRUE)
+  percentVar <- round(100 * attr(data, "percentVar"))
+  ggplot2::ggplot(data, ggplot2::aes(PC1, PC2, color=condition, shape=allele)) + ggplot2::geom_point(size=3) +
+    ggplot2::xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+    ggplot2::ylab(paste0("PC2: ",percentVar[2],"% variance"))
+  
+  # Number of diffexp genes
+  DESeq2::plotMA(ddr, main="MAplot: Genes with allelic bias", ylim=c(-2,2))
+  
+  dev.off()
 }
 
 #' Write the output
