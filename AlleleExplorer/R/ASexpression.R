@@ -3,6 +3,9 @@
 # Author: Vivek Bhardwaj, MPI-IE
 # First created: 13th May 2015
 
+
+## Count features for the RNA-Seq Samples
+
 countFeatures <- function(SampleInfo,AutoParam="RNASeq",AnnotationFile,nthreads,outFileName=NULL,...){
   SampleInfo[,5] = paste(SampleInfo[,2],SampleInfo[,3],SampleInfo[,4],sep="_")
   names = as.character(SampleInfo[,1])
@@ -117,13 +120,17 @@ makeSomePlots <- function(DESeqOutputList,baseAllele = "CASTEiJ",topAllele = "12
   for(tf in names(DESeqOutputList$Results)){
     if(is.null(excludeChr)){
       stats[[tf]] = data.frame(Allele = c(topAllele,baseAllele),
-                               Biased.genes = c(nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange > 0 & padj < .(fdrCutoff) )),
-                                                nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange < 0 & padj < .(fdrCutoff) )))
+                               Biased.genes = c(nrow(subset(DESeqOutputList$Results[[tf]], 
+                                                            log2FoldChange > 0 & padj < .(fdrCutoff) )),
+                                                nrow(subset(DESeqOutputList$Results[[tf]], 
+                                                            log2FoldChange < 0 & padj < .(fdrCutoff) )))
       )
     } else {
       stats[[tf]] = data.frame(Allele = c(topAllele,baseAllele),
-                               Biased.genes = c(nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange > 0 & padj < .(fdrCutoff) & chr != excludeChr)),
-                                                nrow(subset(DESeqOutputList$Results[[tf]], log2FoldChange < 0 & padj < .(fdrCutoff) & chr != excludeChr)))
+                               Biased.genes = c(nrow(subset(DESeqOutputList$Results[[tf]], 
+                                                            log2FoldChange > 0 & padj < .(fdrCutoff) & chr != excludeChr)),
+                                                nrow(subset(DESeqOutputList$Results[[tf]], 
+                                                            log2FoldChange < 0 & padj < .(fdrCutoff) & chr != excludeChr)))
       )
       
     }

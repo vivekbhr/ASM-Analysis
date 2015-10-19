@@ -1,6 +1,6 @@
 
-# library "ASexpression"
-# Author: Vivek Bhardwaj, MPI-IE
+# Functions to perform allele-sp differential expression
+# (c) Vivek Bhardwaj (bhardwaj@ie-freiburg.mpg.de)
 # First created: 13th May 2015
 
 ### Read the Files and Count features for the RNA-Seq Samples
@@ -84,6 +84,7 @@ alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){
 }
 
 ### Write the output
+
 writeOutput_rna <- function(rnaResultObject,annotateFrom = "dataset", species = "Mus musculus",
                             excludeChr = "chr12",fdrCutoff = 0.01,outfileName){
   

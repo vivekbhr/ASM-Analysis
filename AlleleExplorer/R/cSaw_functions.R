@@ -1,16 +1,13 @@
 
 #### ~~~~ Functions to Run CSAW as part of AS analysis pipeline ~~~~ ####
-## Load the shit
-library(csaw)
-library(edgeR)
-library(org.Mm.eg.db)
-library(TxDb.Mmusculus.UCSC.mm9.knownGene)
+### (c) Vivek Bhardwaj (bhardwaj@ie-freiburg.mpg.de)
 
 ### Read files
 readfiles_chip <- function(csvFile = "testBAMs/testSampleSheet.csv", refAllele = "pat"){
   
   # Parse Sample sheet
-  samp <- read.csv(csvFile,header=TRUE,colClasses = c("character","character","factor","factor","factor","character"))
+  samp <- read.csv(csvFile,header=TRUE, 
+                   colClasses = c("character","character","factor","factor","factor","character"))
   if(any(grepl("chip",samp[,1]))){
     message("Extracting sample Info")
     samp <- samp[which(grepl("chip",samp[,1])),]
@@ -18,14 +15,15 @@ readfiles_chip <- function(csvFile = "testBAMs/testSampleSheet.csv", refAllele =
   
   # readFiles using CSAW
   bam.files <- samp[,6]
-  pe.param <- readParam(max.frag=400, pe="both") # use the param for pe reads
+  pe.param <- csaw::readParam(max.frag=400, pe="both") # use the param for pe reads
   message("Counting reads in windows")
-  counts <- windowCounts(bam.files = bam.files,param=pe.param)
+  counts <- csaw::windowCounts(bam.files = bam.files,param=pe.param)
   
   # make model matrix for edgeR
   design <- data.frame(row.names = samp[,2] , samp[,3:5]) ## Add: A warning if rownames not uniq
+  colnames(design) <- c("condition","allele","tf")
   design[,2] <- relevel(design[,2],refAllele)
-  design <- model.matrix(~ allele * tf,data = design)
+  design <- model.matrix(~ allele * tf,data = design) ## bug : uses colnames to create model matrix!
   # output
   return(list(windowCounts = counts, design = design, sampledata = samp))
 }
@@ -51,8 +49,8 @@ makeQCplots_chip <- function(chipCountObject,outdir){
   ## Checking cross-correlation
   message("Checking cross-correlation")
   max.delay <- 500
-  dedup.on <- readParam(dedup=TRUE, minq=20)
-  x <- correlateReads(bam.files, max.delay, param=dedup.on)
+  dedup.on <- csaw::readParam(dedup=TRUE, minq=20)
+  x <- csaw::correlateReads(bam.files, max.delay, param=dedup.on)
   #plot
   pdf(paste0(outdir,"/peCross-correlation.pdf"))
   plot(0:max.delay, x, type="l", ylab="CCF", xlab="Delay (bp)")
@@ -62,11 +60,11 @@ makeQCplots_chip <- function(chipCountObject,outdir){
   message("Checking appropriate window sizes")
   plotwc <- function(curbam){
     #print(curbam)
-    pe.param <- readParam(max.frag=400, pe="both") # use the param for pe reads
-    windowed <- windowCounts(curbam, spacing=50, width=50, param= pe.param, filter=20)
+    pe.param <- csaw::readParam(max.frag=400, pe="both") # use the param for pe reads
+    windowed <- csaw::windowCounts(curbam, spacing=50, width=50, param= pe.param, filter=20)
     rwsms <- rowSums(assay(windowed))
-    maxed <- findMaxima(rowRanges(windowed), range=1000, metric=rwsms)
-    curbam.out <- profileSites(curbam, rowRanges(windowed)[maxed],
+    maxed <- csaw::findMaxima(rowRanges(windowed), range=1000, metric=rwsms)
+    curbam.out <- csaw::profileSites(curbam, rowRanges(windowed)[maxed],
                                         param=pe.param, weight=1/rwsms[maxed])
     return(curbam.out)
   }
@@ -98,7 +96,7 @@ filterByInput_chip <- function(chipCountObject,priorCount = 5){
         chip <- samp[which(samp[,3] == "test"),6]
         chip <- countdat[,which(colData(countdat)$bam.files %in% chip)]
         # Filter chip by control counts
-        filter.stat <- filterWindows(chip, control, type="control", prior.count = priorCount) # min count in window should be 5
+        filter.stat <- csaw::filterWindows(chip, control, type="control", prior.count = priorCount) # min count in window should be 5
         keep <- filter.stat$filter > log2(3) 
         countdat <- countdat[keep,] # now "countdat" contains both input and chip counts, but filtered
         
@@ -115,13 +113,13 @@ tmmNormalize_chip <- function(chipCountObject,binsize = 10000, plotfile = "TMM_n
         samp <- chipCountObject$sampledata
         bam.files <- samp[,6]
         # Get norm factors
-        demo <- windowCounts(bam.files, bin=TRUE, width = binsize)
-        normfacs <- normalize(demo)
+        demo <- csaw::windowCounts(bam.files, bin=TRUE, width = binsize)
+        normfacs <- csaw::normalize(demo)
         
         # plot normalized counts
         pdf(plotfile)
         par(mfrow=c(1, 3), mar=c(5, 4, 2, 1.5))
-        adj.counts <- cpm(asDGEList(demo), log=TRUE)
+        adj.counts <- edgeR::cpm(csaw::asDGEList(demo), log=TRUE)
         for (i in 1:(length(bam.files)-1)) {
                 cur.x <- adj.counts[,1]
                 cur.y <- adj.counts[,1+i]
@@ -131,7 +129,7 @@ tmmNormalize_chip <- function(chipCountObject,binsize = 10000, plotfile = "TMM_n
         }
         ## MDS plot to check for replicate variability
         for (top in c(100, 500, 1000, 5000)) {
-                out <- plotMDS(adj.counts, main=top, col= samp[,4],labels=samp[,2], top=top)
+                out <- limma::plotMDS(adj.counts, main=top, col= samp[,4],labels=samp[,2], top=top)
         }
         dev.off()
         
@@ -149,9 +147,9 @@ getDBregions_chip <- function(chipCountObject,plotfile = NULL, tfname = "msl2"){
         y <- asDGEList(chipCountObject$windowCounts, norm.factors = chipCountObject$normFactors)
         design <- chipCountObject$design
         # Estimate dispersions
-        y <- estimateDisp(y, design)
+        y <- edgeR::estimateDisp(y, design)
         o <- order(y$AveLogCPM)
-        fit <- glmQLFit(y, design, robust=TRUE)
+        fit <- edgeR::glmQLFit(y, design, robust=TRUE)
         # and plot dispersions
         if(!(is.null(plotfile))){
                 pdf(plotfile)
@@ -159,7 +157,7 @@ getDBregions_chip <- function(chipCountObject,plotfile = NULL, tfname = "msl2"){
                 plot(y$AveLogCPM[o], sqrt(y$trended.dispersion[o]), type="l", lwd=2,
                      ylim=c(0, 1), xlab=expression("Ave."~Log[2]~"CPM"),
                      ylab=("Biological coefficient of variation"))
-                plotQLDisp(fit)
+                edgeR::plotQLDisp(fit)
                 dev.off()
         }
         
@@ -167,11 +165,11 @@ getDBregions_chip <- function(chipCountObject,plotfile = NULL, tfname = "msl2"){
         coef_one <- colnames(fit)[2] # it's the first coefficient that can be extracted (this will be the non-reference allele)
         tf <- colnames(chipCountObject$sampledata)[5]
         ## other coefs will be added above this, the names of 2nd coef have to be provided as tfname
-        results <- glmQLFTest(fit, coef = paste0(coef_one,":",tf,tfname))
+        results <- edgeR::glmQLFTest(fit, coef = paste0(coef_one,":",tf,tfname))
         
         # Clustering DB windows into regions: Using quick and dirty method
-        merged <- mergeWindows(rowRanges(chipCountObject$windowCounts), tol=500L)
-        tabcom <- combineTests(merged$id, results$table) # get combined test p-value for merged windows
+        merged <- csaw::mergeWindows(rowRanges(chipCountObject$windowCounts), tol=500L)
+        tabcom <- csaw::combineTests(merged$id, results$table) # get combined test p-value for merged windows
         # Return all results
         allout <- list(fit = fit, results = results, mergedRegions = merged, combinedPvalues = tabcom)
         return(allout)
@@ -187,9 +185,9 @@ writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE,
         tabcom <- chipResultObject$combinedPvalues
         ## adding gene annotation
         if(annotation){
-                anno <- detailRanges(merged$region, txdb= Txdb,
+                anno <- csaw::detailRanges(merged$region, txdb= Txdb,
                                      orgdb=org.Mm.eg.db, promoter=c(3000, 1000), dist=5000)
-                anno.ranges <- detailRanges(txdb=TxDb.Mmusculus.UCSC.mm9.knownGene, orgdb = Orgdb)
+                anno.ranges <- csaw::detailRanges(txdb=TxDb.Mmusculus.UCSC.mm9.knownGene, orgdb = Orgdb)
                 
                 ## Print regions and genes as output
                 ofile <- gzfile(paste0(outfileName,".gz"), open="w")
@@ -208,12 +206,4 @@ writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE,
         }
         
 }
-
-
-
-
-
-
-
-
 
