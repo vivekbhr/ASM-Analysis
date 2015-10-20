@@ -82,7 +82,7 @@ countFeatures_rna <- function(csvFile = "testBAMs/testSampleSheet.csv",Annotatio
 #' alleleDiff_rna(rnaCountObject,fdrCutoff = 0.01,tfname = "mof")
 #' 
 
-alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof",plotfile = "DESeq_plots.pdf"){ 
+alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){ 
   
   countdata <- rnaCountObject$counts
   designmat <- rnaCountObject$design
@@ -107,6 +107,8 @@ alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof",plotfi
 #'
 #' @param rnaResultObject Output of alleleDiff_rna
 #' @param outfile Output file to write back the result
+#' @param barplot TRUE/FALSE whether you want the barplot for allele-biased gene numbers
+#' @param excludeChr The chromosome to exclude from the barplot (if barplot = TRUE)
 #' @return A pdf file with QC and results plots
 #' @examples
 #' plotResults_rna(rnaResultObject,outfile = "resultPlots_RNA.pdf")
@@ -155,8 +157,12 @@ plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", bar
   # Number of diffexp genes
   DESeq2::plotMA(ddr, main="MAplot: Genes with allelic bias", ylim=c(-2,2))
   if(barplot = TRUE){
-    as.data.frame(ddr) %>% dplyr::filter(padj < 0.01,log2FoldChange > 1) %>% nrow() -> altup
-    as.data.frame(ddr) %>% dplyr::filter(padj < 0.01,log2FoldChange < -1) %>% nrow() -> refup
+    annot <- rnaResultObject$annotation[1:2] # merge with ddr to remove chr
+    as.data.frame(ddr) %>% merge(annot,by.x=0,by.y=1) %>% 
+      dplyr::filter(!(excludeChr %in% Chr), padj < 0.01,log2FoldChange > 1) %>% nrow() -> altup
+    as.data.frame(ddr) %>% merge(annot,by.x=0,by.y=1) 
+    %>% dplyr::filter(!(excludeChr %in% Chr),padj < 0.01,log2FoldChange < -1) %>% nrow() -> refup
+    # plot
     rnaResultObject$alleleinfo$refAllele %>% as.character() -> ref
     rnaResultObject$alleleinfo$altAllele %>% as.character() -> alt
     data.frame(allele = c(ref,alt), genes = c(refup,altup)) %>% reshape2::melt() %>%
@@ -212,7 +218,7 @@ writeOutput_rna <- function(rnaResultObject,annotateFrom = "dataset", species = 
     results <- results[results$padj < fdrCutoff,]
   }
   if(!(is.null(excludeChr))){
-    results <- results[results$Chr != excludeChr,]
+    results <- dplyr::filter(results, !(excludeChr %in% Chr))
   }
   
   ## Add another column for allelic bias
