@@ -156,18 +156,19 @@ plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", bar
   
   # Number of diffexp genes
   DESeq2::plotMA(ddr, main="MAplot: Genes with allelic bias", ylim=c(-2,2))
-  if(barplot = TRUE){
+  if(barplot == TRUE){
     annot <- rnaResultObject$annotation[1:2] # merge with ddr to remove chr
-    as.data.frame(ddr) %>% merge(annot,by.x=0,by.y=1) %>% 
-      dplyr::filter(!(excludeChr %in% Chr), padj < 0.01,log2FoldChange > 1) %>% nrow() -> altup
-    as.data.frame(ddr) %>% merge(annot,by.x=0,by.y=1) 
-    %>% dplyr::filter(!(excludeChr %in% Chr),padj < 0.01,log2FoldChange < -1) %>% nrow() -> refup
+    merge(as.data.frame(ddr),annot,by.x=0,by.y=1) -> merged 
+      nrow(dplyr::filter(merged,!(excludeChr %in% Chr), padj < 0.01,log2FoldChange > 1)) -> altup
+    merge(as.data.frame(ddr),annot,by.x=0,by.y=1) -> merged
+      nrow(dplyr::filter(!(excludeChr %in% Chr),padj < 0.01,log2FoldChange < -1)) -> refup
     # plot
     rnaResultObject$alleleinfo$refAllele %>% as.character() -> ref
     rnaResultObject$alleleinfo$altAllele %>% as.character() -> alt
-    data.frame(allele = c(ref,alt), genes = c(refup,altup)) %>% reshape2::melt() %>%
-      ggplot2::ggplot(.,ggplot2::aes(allele,value)) + ggplot2::geom_bar(stat = "identity",position = "dodge") +
-      ggplot2::labs(y = "Biased genes") + ggplot2::theme_gray(base_size = 16)
+    reshape2::melt(data.frame(allele = c(ref,alt), genes = c(refup,altup))) -> plotdat
+      ggplot2::ggplot(plotdat,ggplot2::aes(allele,value)) + 
+          ggplot2::geom_bar(stat = "identity",position = "dodge") +
+              ggplot2::labs(y = "Biased genes") + ggplot2::theme_gray(base_size = 16)
   }
   dev.off()
 }
