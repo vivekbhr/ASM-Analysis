@@ -240,7 +240,7 @@ writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE,
         ## adding gene annotation
         if(annotation){
                 anno <- csaw::detailRanges(merged$region, txdb= Txdb,
-                                     orgdb=org.Mm.eg.db, promoter=c(3000, 1000), dist=5000)
+                                     orgdb=org.Mm.eg.db, promoter=c(1000, 1000), dist=5000)
                 anno.ranges <- csaw::detailRanges(txdb=TxDb.Mmusculus.UCSC.mm9.knownGene, orgdb = Orgdb)
                 
                 ## Print regions and genes as output
