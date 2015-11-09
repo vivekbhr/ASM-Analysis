@@ -32,7 +32,8 @@ readfiles_chip <- function(csvFile = "testBAMs/testSampleSheet.csv", refAllele =
   design[,2] <- relevel(design[,2],refAllele)
   design <- model.matrix(~ allele * tf,data = design) ## bug : uses colnames to create model matrix!
   # output
-  return(list(windowCounts = counts, design = design, sampledata = samp))
+  chipCountObject <- list(windowCounts = counts, design = design, sampledata = samp)
+  return(chipCountObject)
 }
 
 #' Make plots to select window size and pe-distance cutoffs
