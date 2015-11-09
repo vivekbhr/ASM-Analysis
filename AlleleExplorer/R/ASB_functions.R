@@ -213,8 +213,8 @@ getDBregions_chip <- function(chipCountObject,plotfile = NULL, tfname = "msl2"){
         merged <- csaw::mergeWindows(rowRanges(chipCountObject$windowCounts), tol=500L)
         tabcom <- csaw::combineTests(merged$id, results$table) # get combined test p-value for merged windows
         # Return all results
-        allout <- list(fit = fit, results = results, mergedRegions = merged, combinedPvalues = tabcom)
-        return(allout)
+        chipResultObject <- list(fit = fit, results = results, mergedRegions = merged, combinedPvalues = tabcom)
+        return(chipResultObject)
 }
 
 
