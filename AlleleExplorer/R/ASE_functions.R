@@ -16,6 +16,7 @@
 #' countFeatures_rna(csvFile = "testBAMs/testSampleSheet.csv",AnnotationFile,nthreads,
 #' outfileName=NULL,refAllele = "pat",userParam = FALSE,...)
 #' 
+
 countFeatures_rna <- function(csvFile = "testBAMs/testSampleSheet.csv",AnnotationFile,nthreads,
                               outfileName=NULL,refAllele = "pat",userParam = FALSE,...){
   
@@ -49,26 +50,26 @@ countFeatures_rna <- function(csvFile = "testBAMs/testSampleSheet.csv",Annotatio
   message("Using Default options for Allele-Specific Expression")
   if(userParam){
     message("Counting reads using user-provided parameters")
-    fcres <- Rsubread::featureCounts(files = bam.files,annot.ext = AnnotationFile,
-                                     isGTFAnnotationFile=TRUE,...)
+    rnaCountObject <- Rsubread::featureCounts(files = bam.files,annot.ext = AnnotationFile,
+                                              isGTFAnnotationFile=TRUE,...)
   } else {
     message("Counting reads using standard parameters")
-    fcres <- Rsubread::featureCounts(files = bam.files,annot.ext = AnnotationFile,
-                                     isGTFAnnotationFile=TRUE,useMetaFeatures=TRUE,
-                                     isPairedEnd=TRUE,requireBothEndsMapped=FALSE,checkFragLength=FALSE,
-                                     nthreads=nthreads,strandSpecific=2,minMQS=0,countPrimaryAlignmentsOnly=TRUE)
+    rnaCountObject <- Rsubread::featureCounts(files = bam.files,annot.ext = AnnotationFile,
+                                              isGTFAnnotationFile=TRUE,useMetaFeatures=TRUE,
+                                              isPairedEnd=TRUE,requireBothEndsMapped=FALSE,checkFragLength=FALSE,
+                                              nthreads=nthreads,strandSpecific=2,minMQS=0,countPrimaryAlignmentsOnly=TRUE)
   }
   # Save Fcount output 
-  colnames(fcres$counts) <- samp[,2] # change colnames to samplenames
-  fcres$targets <- samp[,2] # changed targets(just another df) to samplenames
+  colnames(rnaCountObject$counts) <- samp[,2] # change colnames to samplenames
+  rnaCountObject$targets <- samp[,2] # changed targets(just another df) to samplenames
   if(!(is.null(outfileName))){
-    write.table(fcres$counts,outfileName,sep="\t",row.names=F,quote=F)
+    write.table(rnaCountObject$counts,outfileName,sep="\t",row.names=F,quote=F)
   }
   
   ## Make the output
-  fcres$design <- design
-  fcres$alleleinfo <- alleleinfo
-  return(fcres)
+  rnaCountObject$design <- design
+  rnaCountObject$alleleinfo <- alleleinfo
+  return(rnaCountObject)
 }
 
 
@@ -100,7 +101,7 @@ alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){
   # Return outputs
   rnaCountObject$DEdataSet <- dds
   rnaCountObject$DEresult <- ddr
-  return(rnaCountObject)
+  return(rnaCountObject) ## Now it's called "rnaResultObject"
 }
 
 #' Make QC and result plots for DESeq2 output
