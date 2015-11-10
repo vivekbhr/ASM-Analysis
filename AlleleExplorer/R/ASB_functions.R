@@ -30,6 +30,7 @@ readfiles_chip <- function(csvFile = "testBAMs/testSampleSheet.csv", refAllele =
   design <- data.frame(row.names = samp[,2] , samp[,3:5]) ## Add: A warning if rownames not uniq
   colnames(design) <- c("condition","allele","tf")
   design[,2] <- relevel(design[,2],refAllele)
+  design[,3] <- droplevels(design[,3])
   design <- model.matrix(~ allele * tf,data = design) ## bug : uses colnames to create model matrix!
   # output
   chipCountObject <- list(windowCounts = counts, design = design, sampledata = samp)
