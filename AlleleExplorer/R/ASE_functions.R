@@ -116,7 +116,8 @@ alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){
 #' 
 ## Function requires : vsn, DESeq2 > 1.10, pheatmap, RColorBrewer, ggplot2
 
-plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", barplot = TRUE, excludeChr = "chr12" ){
+plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", barplot = TRUE,
+                            fdrCutoff = 0.01, excludeChr = "chr12" ){
   dds <- rnaResultObject$DEdataSet
   ddr <- rnaResultObject$DEresult
   rld <- DESeq2::rlog(dds) #rlog transform
@@ -159,10 +160,10 @@ plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", bar
   DESeq2::plotMA(ddr, main="MAplot: Genes with allelic bias", ylim=c(-2,2))
   if(barplot == TRUE){
     annot <- rnaResultObject$annotation[1:2] # merge with ddr to remove chr
-    merge(as.data.frame(ddr),annot,by.x=0,by.y=1) -> merged 
-      nrow(dplyr::filter(merged,!(excludeChr %in% Chr), padj < 0.01,log2FoldChange > 1)) -> altup
-    merge(as.data.frame(ddr),annot,by.x=0,by.y=1) -> merged
-      nrow(dplyr::filter(!(excludeChr %in% Chr),padj < 0.01,log2FoldChange < -1)) -> refup
+    merged  <- merge(as.data.frame(ddr),annot,by.x=0,by.y=1)
+    altup <- nrow(dplyr::filter(merged,!(excludeChr %in% Chr), padj < fdrCutoff,log2FoldChange > 1))
+    merged <- merge(as.data.frame(ddr),annot,by.x=0,by.y=1)
+    refup <-  nrow(dplyr::filter(merged,!(excludeChr %in% Chr),padj < fdrCutoff,log2FoldChange < -1))
     # plot
     rnaResultObject$alleleinfo$refAllele %>% as.character() -> ref
     rnaResultObject$alleleinfo$altAllele %>% as.character() -> alt
