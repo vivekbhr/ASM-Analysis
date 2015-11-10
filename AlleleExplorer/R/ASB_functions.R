@@ -162,7 +162,7 @@ tmmNormalize_chip <- function(chipCountObject,binsize = 10000, plotfile = "TMM_n
         }
         ## MDS plot to check for replicate variability
         for (top in c(100, 500, 1000, 5000)) {
-                out <- limma::plotMDS(adj.counts, main=top, col= samp[,4],labels=samp[,2], top=top)
+                out <- limma::plotMDS(adj.counts, main=top, col= as.factor(samp[,4]),labels=samp[,2], top=top)
         }
         dev.off()
         
