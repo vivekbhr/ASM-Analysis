@@ -147,7 +147,8 @@ tmmNormalize_chip <- function(chipCountObject,binsize = 10000, plotfile = "TMM_n
         bam.files <- samp[,6]
         # Get norm factors
         demo <- csaw::windowCounts(bam.files, bin=TRUE, width = binsize)
-        normfacs <- csaw::normalize(demo)
+        normfacs <- csaw::normOffsets(demo)
+        chipCountObject$normFactors <- normfacs
         
         # plot normalized counts
         pdf(plotfile)
@@ -156,18 +157,18 @@ tmmNormalize_chip <- function(chipCountObject,binsize = 10000, plotfile = "TMM_n
         for (i in 1:(length(bam.files)-1)) {
                 cur.x <- adj.counts[,1]
                 cur.y <- adj.counts[,1+i]
-                smoothScatter(x=(cur.x+cur.y)/2+6*log2(10), y=cur.x-cur.y,xlab="A", ylab="M", main=paste("1 vs", i+1))
+                smoothScatter(x=(cur.x+cur.y)/2+6*log2(10), y=cur.x-cur.y,xlab="A", 
+                              ylab="M", main=paste("1 vs", i+1))
                 all.dist <- diff(log2(normfacs[c(i+1, 1)]))
                 abline(h=all.dist, col="red")
         }
         ## MDS plot to check for replicate variability
         for (top in c(100, 500, 1000, 5000)) {
-                out <- limma::plotMDS(adj.counts, main=top, col= as.factor(samp[,4]),labels=samp[,2], top=top)
+                limma::plotMDS(adj.counts, main=top, col= as.numeric(samp[,4]),labels=samp[,2], top=top)
         }
         dev.off()
         
         ## Return normfactors
-        chipCountObject$normFactors <- normfacs
         return(chipCountObject)
 }
 
