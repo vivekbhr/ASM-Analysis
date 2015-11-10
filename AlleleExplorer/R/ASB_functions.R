@@ -235,7 +235,7 @@ getDBregions_chip <- function(chipCountObject,plotfile = NULL, tfname = "msl2"){
 #' Txdb = TxDb.Mmusculus.UCSC.mm9.knownGene, Orgdb = org.Mm.eg.db)
 #' 
 
-writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE, 
+writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE, fdr = 0.05,
                              Txdb = TxDb.Mmusculus.UCSC.mm9.knownGene, Orgdb = org.Mm.eg.db){
         # get merged regions
         merged <- chipResultObject$mergedRegions
@@ -254,7 +254,7 @@ writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE,
                 
         } else {
                 ## Print regions as bed files
-                is.sig <- tabcom$FDR <= 0.05
+                is.sig <- tabcom$FDR <= fdr
                 test <- merged$region[is.sig]
                 test$score <- -10*log10(tabcom$FDR[is.sig])
                 names(test) <- paste0("region", 1:sum(is.sig))
