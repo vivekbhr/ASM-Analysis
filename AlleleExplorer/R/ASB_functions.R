@@ -187,7 +187,7 @@ tmmNormalize_chip <- function(chipCountObject,binsize = 10000, plotfile = "TMM_n
 getDBregions_chip <- function(chipCountObject,plotfile = NULL, tfname = "msl2"){
         
         # Make DGElist
-        y <- asDGEList(chipCountObject$windowCounts, norm.factors = chipCountObject$normFactors)
+        y <- csaw::asDGEList(chipCountObject$windowCounts, norm.factors = chipCountObject$normFactors)
         design <- chipCountObject$design
         # Estimate dispersions
         y <- edgeR::estimateDisp(y, design)
