@@ -54,7 +54,7 @@ makeQCplots_chip <- function(chipCountObject,outdir){
   ## Histogram to check frag size cutoff
   message("Checking fragment sizes")
   pdf(paste0(outdir,"/pefrag-sizes.pdf"))
-  out <- list(sapply(bam.files,function(x) getPESizes(x)))
+  out <- list(sapply(bam.files,function(x) csaw::getPESizes(x)))
   #plot (change the number of plots)
   for(i in seq(1,16,2)) hist(out[[1]][[i]], breaks=50, xlab="Fragment sizes (bp)",
                              ylab="Frequency", main=paste0("sample_",i),col="steelblue") %>% 
