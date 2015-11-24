@@ -38,7 +38,7 @@ def BED_to_interval_tree(BED_file):
         if len(bed_interval_tree[chrom].find(start_bed, start_bed + 1)) > 0:
             continue
         """
-        
+
         bed_interval_tree[chrom].add_interval(Interval(start_bed, end_bed))
 
 #    print "finish proccessing bed file"
@@ -54,7 +54,7 @@ def main():
         "output. It should be used in a pipeline as follows\n /package/samtools/samtools view -h - | %(prog)s",
         usage = "/package/samtools/samtools view -h - | %(prog)s")
 
-    p.add_argument('--filter_out_from_BED',
+    p.add_argument('--remove_blklist',
                  help="BED file containing regions to filter out. Usually a black list "
                    "regions want to be filter out.",
                  type=argparse.FileType('r'))
@@ -65,22 +65,16 @@ def main():
     p.add_argument('--multiple', action="store_true",
                  help = "if set, all reads where more than one alignment "
                  "was reported by bowtie2 are removed")
-    p.add_argument('--mismatch', action="store_true",
-                 help = "if set, all reads with at least one mismatch are removed")
-    p.add_argument('--lowqual', action="store_true",
-                 help="if set, all low quality reads (mapping quality less than Q30) are removed")
-    p.add_argument('--rmseq', action="store_true", 
-                 help="if set, query sequences and qualities (col 10, 11) are removed to reduce file size")
-	
+
     args = p.parse_args()
 
-    if args.filter_out_from_BED:
+    if args.remove_blklist:
         filter_out = BED_to_interval_tree(args.filter_out_from_BED)
-	
+
     for line in sys.stdin:
-	    
+
         field = line.split("\t")
-	    
+
         # filter header - skips random and/or chrM depending on the chosen option
         if line[0] == '@':
     	    if (args.random and field[1][-7:] == '_random') or (args.chrM and field[1] == 'SN:chrM'):
@@ -88,30 +82,19 @@ def main():
     	    else:
     	        print line,
     	        continue
-        
+
 	    # skip random and mitochondrial chromosomes (reads)
         if (args.random and field[2][-7:] == '_random') or (args.chrM and field[2] == 'chrM'):
     	    continue
-	    
+
         # filtering based on a bed file
-        if args.filter_out_from_BED and field[2] in filter_out:
+        if args.remove_blklist and field[2] in filter_out:
             pos = int(field[3])
             match = filter_out[field[2]].find(pos-300, pos + 300)
             if len(match)>0:
                 continue
 
-        # remove reads with mismatches
-        if args.mismatch and len(field) > 12:
-            skip = False
-            for subfield in field[12:]: #scanning all optional fields for the entry indicating mismatches (<XM:i:>). we need to scan all fields because not all of them are indicated for each read, therefore the entry can be in a different column every time
-                (name,ftype,value) = subfield.split(":")
-		        # if value > 0 that means a mismatch is present
-                if name=='XM' and int(value) > 0:
-                    skip = True
-                    break
-            if skip:
-                continue
-		
+
         # remove reads with more than one reported alignment (indicated by the presence of <XS:i:> in the sam file)
         if args.multiple and len(field) >= 12:
             alignScore = None
@@ -129,17 +112,9 @@ def main():
                 continue
             elif alignNumbers > 1:
                 continue
-        
-        # remove reads with mapping quality below 30, ignore header
-        if args.lowqual and line[0] != '@' and int(field[4]) < 30:
-            continue
-            
-        # remove query sequences and qualities (col 10, 11)
-        if args.rmseq:
-            field[9] = "*"
-            field[10] = "*"
+
             line = "\t".join(field)
-        
+
         print line,
 
 if __name__ == '__main__':
