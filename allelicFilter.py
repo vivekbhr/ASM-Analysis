@@ -209,10 +209,14 @@ def main():
     >>> head3_InputA_femES.chrX.bam
     '''
     args = get_args()
-    # adding samfilter functions first
-    if args.remove_blklist:
-        filter_out = BED_to_interval_tree(args.filter_out_from_BED)
-
+    ## IF ARGS==FILTER THEN SO THE FILTERING STUFF
+    if args.command == 'filter':
+        # adding samfilter functions first
+        if args.remove_blklist:
+            filter_out = BED_to_interval_tree(args.filter_out_from_BED)
+            return
+            
+    ## ELSE DO THE SPLITTING STUFF
     infile = pysam.Samfile(args.BAMfile, "rb")
     newHeader = prepare_header(infile, args.coordinateSorting)
 
