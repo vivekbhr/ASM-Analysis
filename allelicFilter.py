@@ -41,7 +41,6 @@ def get_args():
         'filter',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         help="Filter the BAM file with multiple criteria.",
-        parents=[filter_subparser()],
         usage='%(prog)s filter '
               '--remove_blklist /path/to/blklist-regions.bed '
               '--random '
@@ -72,14 +71,14 @@ def get_args():
               '--outfile3 filtered_equalmapped.bam')
 
     ## For splitting
-          split_mode.add_argument('--BAMfile', '-in', type=str, required=True, help="suspender-generated BAM file")
-          split_mode.add_argument('--outfile1', '-alt1', type=str, required=True, help = 'Prefix for output file with alternative genome 1')
-          split_mode.add_argument('--outfile2', '-alt2', type=str, required=True, help = 'Prefix for output file with alternative genome 2')
-          split_mode.add_argument('--outfile3', '-neither', type=str, help = 'Prefix for output file with reads that mapped equally well to both alternative genomes (optional).')
-          split_mode.add_argument('--filterDuplicates', '-dup', type=str, default='yes', help = 'remove duplicates; default: yes')
-          split_mode.add_argument('--filterForMappingQuality', '-mapQ', type=int, help = 'indicate a minimum mapping quality that each read (pair) should have, default: 0')
-          split_mode.add_argument('--removeMultiMapped', '-vMulti', action='store_true', default=False, help = 'exclude reads that have more than one alignment based on the NH and/or XS tag; default: not set')
-          split_mode.add_argument('--coordinateSorting', '-coordSort', action='store_true', default=True, help = 'sort the resulting bam files according to read coordinates and index them; default: not set')
+    split_mode.add_argument('--BAMfile', '-in', type=str, required=True, help="suspender-generated BAM file")
+    split_mode.add_argument('--outfile1', '-alt1', type=str, required=True, help = 'Prefix for output file with alternative genome 1')
+    split_mode.add_argument('--outfile2', '-alt2', type=str, required=True, help = 'Prefix for output file with alternative genome 2')
+    split_mode.add_argument('--outfile3', '-neither', type=str, help = 'Prefix for output file with reads that mapped equally well to both alternative genomes (optional).')
+    split_mode.add_argument('--filterDuplicates', '-dup', type=str, default='yes', help = 'remove duplicates; default: yes')
+    split_mode.add_argument('--filterForMappingQuality', '-mapQ', type=int, help = 'indicate a minimum mapping quality that each read (pair) should have, default: 0')
+    split_mode.add_argument('--removeMultiMapped', '-vMulti', action='store_true', default=False, help = 'exclude reads that have more than one alignment based on the NH and/or XS tag; default: not set')
+    split_mode.add_argument('--coordinateSorting', '-coordSort', action='store_true', default=True, help = 'sort the resulting bam files according to read coordinates and index them; default: not set')
 
     args=parser.parse_args()
     return args
@@ -210,9 +209,11 @@ def main():
     >>> head3_InputA_femES.chrX.bam
     '''
     args = get_args()
+    # adding samfilter functions first
+    if args.remove_blklist:
+        filter_out = BED_to_interval_tree(args.filter_out_from_BED)
 
     infile = pysam.Samfile(args.BAMfile, "rb")
-
     newHeader = prepare_header(infile, args.coordinateSorting)
 
     out1 = args.outfile1
