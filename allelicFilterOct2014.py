@@ -24,8 +24,7 @@ import re
 
 def get_args():
     parser=argparse.ArgumentParser(description='Split suspender BAM files')
-    parser.add_argument('--version',action='version',version='%(prog)s {}'.format(__version__)))
-
+    
     ## I am splitting this into two scripts : FILTER and SPLIT
     filter_mode = subparsers.add_parser(
         'filter',
