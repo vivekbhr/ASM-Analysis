@@ -24,11 +24,11 @@ import re
 
 def get_args():
     parser=argparse.ArgumentParser(description='Split suspender BAM files')
-       subparsers = parser.add_subparsers(
+    subparsers = parser.add_subparsers(
         title="commands",
         dest='command',
         metavar='')
-        
+
     ## I am splitting this into two scripts : FILTER and SPLIT
     filter_mode = subparsers.add_parser(
         'filter',
