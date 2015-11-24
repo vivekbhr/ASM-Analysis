@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-''' This program splits BAM files processed by suspenders:
-reads are written into different output alignment files (.bam)
-depending on their genomic origin (which is noted in the po:i tag).
-If a third output file is indicated, reads which map equally well
-_at the same position_ in both genomes will also be reported (po:i:3).
-Currently, this script ignores reads that were assigned by
-suspender's "RANDOM" filter'.
+'''
+This program filters and splits BAM files processed by suspenders:
+Originally the split script was written by @friedue which I modified extensively.
+Reads are written into different output alignment files (.bam) depending on
+their genomic origin (which is noted in the po:i tag). If a third output file
+is indicated, reads which map equally well at the same position in both genomes
+will also be reported (po:i:3). Currently, this script ignores reads that were
+assigned by suspender's "RANDOM" filter'.
 Possible improvements:
 let user choose which reads should be ignored (not just
 RANDOM reads, perhaps);
@@ -21,9 +22,15 @@ import pysam
 import os
 import doctest
 import re
+# bx python (bed file handler for filtering out blklist )
+from bx.intervals.intersection import IntervalTree, Interval
 
 def get_args():
-    parser=argparse.ArgumentParser(description='Filter or Split suspenders-merged BAM files')
+    parser=argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        conflict_handler='resolve',
+        description='Filter or Split suspenders-merged BAM files')
+
     subparsers = parser.add_subparsers(
         title="commands",
         dest='command',
@@ -34,15 +41,29 @@ def get_args():
         'filter',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         help="Filter the BAM file with multiple criteria.",
+        parents=[filter_subparser()],
         usage='%(prog)s filter '
               '--remove_blklist /path/to/blklist-regions.bed '
               '--random '
               '-out filtered.bam \n')
+    ## For Filtering
+    filter_mode.add_argument('--remove_blklist',
+                 help="BED file containing regions to filter out. Usually a black list "
+                   "regions want to be filter out.",
+                 type=argparse.FileType('r'))
+    filter_mode.add_argument('--random', action="store_true",
+                 help="if set, all reads mapping to 'random' chromosome are removed")
+    filter_mode.add_argument('--chrM', action="store_true",
+                 help = "if set, all reads mapping to the mitochondrial chromosome are removed")
+    filter_mode.add_argument('--multiple', action="store_true",
+                 help = "if set, all reads where more than one alignment "
+                 "was reported by bowtie2 are removed")
+
+    #args = p.parse_args()
 
     split_mode = subparsers.add_parser(
         'split',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        #parents=[split_subparser()],
         help="Splits the BAM file by the reads mapping to maternal/paternal allele (or equally mapped)",
         usage='%(prog)s '
               '--BAMfile filtered.bam '
@@ -50,19 +71,47 @@ def get_args():
               '--outfile2 filtered_paternal.bam'
               '--outfile3 filtered_equalmapped.bam')
 
-    ## Add arguments to subparsers
-    def split_subparser():
-          parser.add_argument('--BAMfile', '-in', type=str, required=True, help="suspender-generated BAM file")
-          parser.add_argument('--outfile1', '-alt1', type=str, required=True, help = 'Prefix for output file with alternative genome 1')
-          parser.add_argument('--outfile2', '-alt2', type=str, required=True, help = 'Prefix for output file with alternative genome 2')
-          parser.add_argument('--outfile3', '-neither', type=str, help = 'Prefix for output file with reads that mapped equally well to both alternative genomes (optional).')
-          parser.add_argument('--filterDuplicates', '-dup', type=str, default='yes', help = 'remove duplicates; default: yes')
-          parser.add_argument('--filterForMappingQuality', '-mapQ', type=int, help = 'indicate a minimum mapping quality that each read (pair) should have, default: 0')
-          parser.add_argument('--removeMultiMapped', '-vMulti', action='store_true', default=False, help = 'exclude reads that have more than one alignment based on the NH and/or XS tag; default: not set')
-          parser.add_argument('--coordinateSorting', '-coordSort', action='store_true', default=True, help = 'sort the resulting bam files according to read coordinates and index them; default: not set')
+    ## For splitting
+          split_mode.add_argument('--BAMfile', '-in', type=str, required=True, help="suspender-generated BAM file")
+          split_mode.add_argument('--outfile1', '-alt1', type=str, required=True, help = 'Prefix for output file with alternative genome 1')
+          split_mode.add_argument('--outfile2', '-alt2', type=str, required=True, help = 'Prefix for output file with alternative genome 2')
+          split_mode.add_argument('--outfile3', '-neither', type=str, help = 'Prefix for output file with reads that mapped equally well to both alternative genomes (optional).')
+          split_mode.add_argument('--filterDuplicates', '-dup', type=str, default='yes', help = 'remove duplicates; default: yes')
+          split_mode.add_argument('--filterForMappingQuality', '-mapQ', type=int, help = 'indicate a minimum mapping quality that each read (pair) should have, default: 0')
+          split_mode.add_argument('--removeMultiMapped', '-vMulti', action='store_true', default=False, help = 'exclude reads that have more than one alignment based on the NH and/or XS tag; default: not set')
+          split_mode.add_argument('--coordinateSorting', '-coordSort', action='store_true', default=True, help = 'sort the resulting bam files according to read coordinates and index them; default: not set')
 
     args=parser.parse_args()
     return args
+
+##### ALRIGHT, All arguments parsed.. NOW WE WRITE THE FUNCTIONS
+
+def BED_to_interval_tree(BED_file):
+    """
+    Creates an index of intervals for each BED entri
+
+    :param BED_file: file handler of a BED file
+    """
+    from bx.intervals.intersection import IntervalTree, Interval
+
+    bed_interval_tree = {}
+    for line in BED_file:
+        if line[0] == "#": continue
+        fields = line.strip().split()
+        chrom, start_bed, end_bed, = fields[0], int(fields[1]), int(fields[2])
+
+        if chrom not in bed_interval_tree:
+            bed_interval_tree[chrom] = IntervalTree()
+
+        # skip if a region overlaps with a region already seen
+        """
+        if len(bed_interval_tree[chrom].find(start_bed, start_bed + 1)) > 0:
+            continue
+        """
+
+        bed_interval_tree[chrom].add_interval(Interval(start_bed, end_bed))
+
+    return bed_interval_tree
 
 
 def prepare_header(BamFile, Sorting):
@@ -168,7 +217,8 @@ def main():
 
     out1 = args.outfile1
     out2 = args.outfile2
-    out1_noSort = pysam.Samfile(out1 + '.originalSort.bam', "wb", header = newHeader ) # template will cause the original header to be used, one could modify the header by generating an appropriate dictionary structure, newHeader, and then use that: header = newHeader
+    out1_noSort = pysam.Samfile(out1 + '.originalSort.bam', "wb", header = newHeader ) # template will cause the original header to be used, one could modify the header
+    # by generating an appropriate dictionary structure, newHeader, and then use that: header = newHeader
     out2_noSort = pysam.Samfile(out2 + '.originalSort.bam' , "wb", header = newHeader )
     if args.outfile3:
         out3 = args.outfile3
