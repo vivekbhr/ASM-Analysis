@@ -58,7 +58,7 @@ refmapdir=${workdir}/03_mappingBackToRefgenome
 mergedBAMs=${workdir}/04_mergeMappings
 filteredBAMs=${workdir}/05_filterMergedBAMs
 split=${workdir}/06_splitFilteredBAMs
-out=${workdir}/07_peakCalling_unSplitBAMs
+#out=${workdir}/07_peakCalling_unSplitBAMs
 
 for dir in ${bowtieOut} ${refmapdir} ${mergedBAMs} ${filteredBAMs} ${split} ${out}; do
 	if [[ ! -d ${dir} ]]; then
