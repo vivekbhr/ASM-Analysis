@@ -18,4 +18,5 @@ AlleleExplorer can be installed and used in R. After installation it can also be
 
 
 ***Author: @vivekbhr***
+
 ***License: GPLv3***
