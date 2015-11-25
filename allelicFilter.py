@@ -205,17 +205,60 @@ def sort_output(outPrefix):
 
 def main():
 
-    '''
-    >>> head3_InputA_femES.chrX.bam
-    '''
     args = get_args()
-    ## IF ARGS==FILTER THEN SO THE FILTERING STUFF
+    ## IF ARGS==FILTER THEN DO THE FILTERING STUFF
+
     if args.command == 'filter':
         # adding samfilter functions first
         if args.remove_blklist:
             filter_out = BED_to_interval_tree(args.filter_out_from_BED)
-            return
-            
+
+        for line in sys.stdin:
+
+            field = line.split("\t")
+
+            # filter header - skips random and/or chrM depending on the chosen option
+            if line[0] == '@':
+                if (args.random and field[1][-7:] == '_random') or (args.chrM and field[1] == 'SN:chrM'):
+                    continue
+                else:
+                    print line,
+                    continue
+
+	    # skip random and mitochondrial chromosomes (reads)
+            if (args.random and field[2][-7:] == '_random') or (args.chrM and field[2] == 'chrM'):
+                continue
+
+        # filtering based on a bed file
+            if args.remove_blklist and field[2] in filter_out:
+                pos = int(field[3])
+                match = filter_out[field[2]].find(pos-300, pos + 300)
+                if len(match)>0:
+                    continue
+
+
+        # remove reads with more than one reported alignment (indicated by the presence of <XS:i:> in the sam file)
+            if args.multiple and len(field) >= 12:
+                alignScore = None
+                additionalAlignScore = None
+                alignNumbers = None
+                for subfield in field[12:]:
+                    (name,ftype,value) = subfield.split(":")
+                    if name=='AS':
+                        alignScore = int(value)
+                    if name=='XS':
+                        additionalAlignScore = int(value)
+                    if name=='NH':
+                        alignNumbers = int(value)
+                if additionalAlignScore != None and alignScore == additionalAlignScore:
+                    continue
+                elif alignNumbers > 1:
+                    continue
+
+                line = "\t".join(field)
+            print line,
+
+
     ## ELSE DO THE SPLITTING STUFF
     infile = pysam.Samfile(args.BAMfile, "rb")
     newHeader = prepare_header(infile, args.coordinateSorting)
@@ -294,7 +337,11 @@ def main():
     if args.outfile3:
         out3_noSort.close()
 
-    CountOut="reads mapped to alternative genome 1 ({1}): {0}\nreads mapped to alternative genome 2 ({3}): {2}\nundistinguishable reads {4}".format(Counts[0], args.outfile1, Counts[1], args.outfile2, Counts[2])
+    CountOut='''
+    reads mapped to alternative genome 1 ({1}): {0}\n
+    reads mapped to alternative genome 2 ({3}): {2}\n
+    undistinguishable reads {4}'''.format(Counts[0], args.outfile1, Counts[1], args.outfile2, Counts[2])
+
     print CountOut
 
     if args.coordinateSorting:
