@@ -41,9 +41,11 @@ fi
 if [[ ! -d ${workdir} ]]; then
     echo "ERROR: Input directory ${workdir} does not exist."; exit 1
 elif [[ ! -d "${workdir}/01_rawdata/fastq" ]]; then
-    echo "ERROR: Input fastq directory ${workdir}/01_rawdata/fastq does not exist. Please create it and place fastqs with sample names in there."; exit 1
+    echo "ERROR: Input fastq directory ${workdir}/01_rawdata/fastq does not exist.
+          Please create it and place fastqs with sample names in there."; exit 1
 elif [[ ! -d "${workdir}/01_rawdata/pseudogenome" ]]; then
-    echo "ERROR: Input pseudogenome directory ${workdir}/01_rawdata/pseudogenome does not exist. Please create it and place fasta file, index files and mod files with maternal/paternal prefix names in it."; exit 1
+    echo "ERROR: Input pseudogenome directory ${workdir}/01_rawdata/pseudogenome does not exist.
+          Please create it and place fasta file, index files and mod files with maternal/paternal prefix names in it."; exit 1
 elif [[ ! "${config}" ]]; then
     echo "ERROR: Config file not provided."; exit 1
 fi
@@ -114,16 +116,16 @@ ${suspenders} --pileup -p ${proc} -c ${mergedBAMs}/pileupImage_${sample}.png \
 mv ${refmapdir}/${sample}_suspMerged.bam ${mergedBAMs}/
 
 
-## Filtering for random and blacklisted regions in the dir (need to make blklist optional)
+## Filtering for random and blacklisted regions in the dir (Note : need to make blklist optional)
 echo "Filtering and sorting. Sample : ${sample} "
-${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${samfilt} --filter_out_from_BED ${blklist} --random \
+${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter --remove_blklist ${blklist} --random \
 --chrM --lowqual | ${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam - # needs sorting here
 # index
 ${samtools} index ${filteredBAMs}/${sample}_filt.bam
 
 ## AllelicFilter.py : Filtering merged BAMS
 echo "Splitting by alleles. Sample : ${sample} "
-${allelefilt} --BAMfile ${filteredBAMs}/${sample}_filt.bam --outfile1 ${split}/${sample}_129S1_sep.bam --outfile2 ${split}/${sample}_CASTEiJ_sep.bam --outfile3 ${split}/${sample}_cannotTell.bam --removeMultiMapped --coordinateSorting
+${allelefilt} split --BAMfile ${filteredBAMs}/${sample}_filt.bam --outfile1 ${split}/${sample}_129S1_sep.bam --outfile2 ${split}/${sample}_CASTEiJ_sep.bam --outfile3 ${split}/${sample}_cannotTell.bam --removeMultiMapped --coordinateSorting
 
 ## DONE
 
