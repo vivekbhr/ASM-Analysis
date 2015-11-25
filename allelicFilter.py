@@ -211,7 +211,7 @@ def main():
     if args.command == 'filter':
         # adding samfilter functions first
         if args.remove_blklist:
-            filter_out = BED_to_interval_tree(args.filter_out_from_BED)
+            filter_out = BED_to_interval_tree(args.remove_blklist)
 
         for line in sys.stdin:
 
@@ -260,95 +260,96 @@ def main():
 
 
     ## ELSE DO THE SPLITTING STUFF
-    infile = pysam.Samfile(args.BAMfile, "rb")
-    newHeader = prepare_header(infile, args.coordinateSorting)
+    if args.command == 'split':
+        infile = pysam.Samfile(args.BAMfile, "rb")
+        newHeader = prepare_header(infile, args.coordinateSorting)
 
-    out1 = args.outfile1
-    out2 = args.outfile2
-    out1_noSort = pysam.Samfile(out1 + '.originalSort.bam', "wb", header = newHeader ) # template will cause the original header to be used, one could modify the header
-    # by generating an appropriate dictionary structure, newHeader, and then use that: header = newHeader
-    out2_noSort = pysam.Samfile(out2 + '.originalSort.bam' , "wb", header = newHeader )
-    if args.outfile3:
-        out3 = args.outfile3
-        out3_noSort = pysam.Samfile(out3 + '.originalSort.bam' , "wb", header = newHeader )
-
-    else:
-        out3 = None
-
-    keep = True
-    origin = 0
-    Counts = [0,0,0] # keeping track of reads per origin
-
-    # seen is a dictionary of read names
-    # the value associated is a boolean
-    # that when true, it means to keep the read
-    seen = {}
-    seenRead = {}
-
-    for DNAread in infile:
-        #check if read should be kept
-        if DNAread.flag == 4: # excluding unmapped reads
-            keep = False
-
-        if args.filterDuplicates == 'yes' and DNAread.is_duplicate:
-            keep=False
-
-        if keep and [item for item in DNAread.tags if item[0] == 'ct'][0][1] == 'R':
-            keep = False
-
-        if keep and args.removeMultiMapped:
-            keep = remove_multiAlignments(DNAread, True)
-
-        if keep and args.filterForMappingQuality:
-            keep = check_mappingQuality(DNAread, True, args.filterForMappingQuality)
-
-        # if the current read is the second mate,
-        # save both reads (if they passed)
-        # and delete the entries from the dictionaries
-        if DNAread.qname in seen:
-            keep1 = seen[DNAread.qname]
-            keep2 = keep
-        # if either of the reads can be kept, keep both
-            if keep1 or keep2:
-                Counts = save_reads(DNAread, True, outFile1 = out1_noSort, outFile2 = out2_noSort, outFile3 = out3_noSort, c = Counts)
-                Counts = save_reads(seenRead[DNAread.qname], True, outFile1 = out1_noSort, outFile2 = out2_noSort, outFile3 = out3_noSort, c = Counts)
-            del(seen[DNAread.qname])
-            del(seenRead[DNAread.qname])
-
-        # if the current read is not within the seen dictionary
-        # first check if the read is unpaired
-        # if unpaired, save and forget
-        # if paired, save and wait for mate
-        elif DNAread.mate_is_unmapped or not DNAread.is_paired:
-            Counts = save_reads(DNAread, keep, outFile1 = out1_noSort, outFile2 = out2_noSort, outFile3 = out3_noSort, c = Counts)
-        elif DNAread.is_proper_pair:
-            seen[DNAread.qname] = keep
-            seenRead[DNAread.qname] = DNAread
-
-        #origin = 0
-        keep = True
-
-    for entry in seen:
-        Counts = save_reads(seenRead[entry], seen[entry], outFile1 = out1_noSort, outFile2 = out2_noSort, outFile3 = out3_noSort, c = Counts)
-        keep = True
-
-    out1_noSort.close()
-    out2_noSort.close()
-    if args.outfile3:
-        out3_noSort.close()
-
-    CountOut='''
-    reads mapped to alternative genome 1 ({1}): {0}\n
-    reads mapped to alternative genome 2 ({3}): {2}\n
-    undistinguishable reads {4}'''.format(Counts[0], args.outfile1, Counts[1], args.outfile2, Counts[2])
-
-    print CountOut
-
-    if args.coordinateSorting:
-        sort_output(out1)
-        sort_output(out2)
+        out1 = args.outfile1
+        out2 = args.outfile2
+        out1_noSort = pysam.Samfile(out1 + '.originalSort.bam', "wb", header = newHeader ) # template will cause the original header to be used, one could modify the header
+        # by generating an appropriate dictionary structure, newHeader, and then use that: header = newHeader
+        out2_noSort = pysam.Samfile(out2 + '.originalSort.bam' , "wb", header = newHeader )
         if args.outfile3:
-            sort_output(out3)
+            out3 = args.outfile3
+            out3_noSort = pysam.Samfile(out3 + '.originalSort.bam' , "wb", header = newHeader )
+
+        else:
+            out3 = None
+
+        keep = True
+        origin = 0
+        Counts = [0,0,0] # keeping track of reads per origin
+
+        # seen is a dictionary of read names
+        # the value associated is a boolean
+        # that when true, it means to keep the read
+        seen = {}
+        seenRead = {}
+
+        for DNAread in infile:
+            #check if read should be kept
+            if DNAread.flag == 4: # excluding unmapped reads
+                keep = False
+
+            if args.filterDuplicates == 'yes' and DNAread.is_duplicate:
+                keep=False
+
+            if keep and [item for item in DNAread.tags if item[0] == 'ct'][0][1] == 'R':
+                keep = False
+
+            if keep and args.removeMultiMapped:
+                keep = remove_multiAlignments(DNAread, True)
+
+            if keep and args.filterForMappingQuality:
+                keep = check_mappingQuality(DNAread, True, args.filterForMappingQuality)
+
+            # if the current read is the second mate,
+            # save both reads (if they passed)
+            # and delete the entries from the dictionaries
+            if DNAread.qname in seen:
+                keep1 = seen[DNAread.qname]
+                keep2 = keep
+            # if either of the reads can be kept, keep both
+                if keep1 or keep2:
+                    Counts = save_reads(DNAread, True, outFile1 = out1_noSort, outFile2 = out2_noSort, outFile3 = out3_noSort, c = Counts)
+                    Counts = save_reads(seenRead[DNAread.qname], True, outFile1 = out1_noSort, outFile2 = out2_noSort, outFile3 = out3_noSort, c = Counts)
+                del(seen[DNAread.qname])
+                del(seenRead[DNAread.qname])
+
+            # if the current read is not within the seen dictionary
+            # first check if the read is unpaired
+            # if unpaired, save and forget
+            # if paired, save and wait for mate
+            elif DNAread.mate_is_unmapped or not DNAread.is_paired:
+                Counts = save_reads(DNAread, keep, outFile1 = out1_noSort, outFile2 = out2_noSort, outFile3 = out3_noSort, c = Counts)
+            elif DNAread.is_proper_pair:
+                seen[DNAread.qname] = keep
+                seenRead[DNAread.qname] = DNAread
+
+            #origin = 0
+            keep = True
+
+        for entry in seen:
+            Counts = save_reads(seenRead[entry], seen[entry], outFile1 = out1_noSort, outFile2 = out2_noSort, outFile3 = out3_noSort, c = Counts)
+            keep = True
+
+        out1_noSort.close()
+        out2_noSort.close()
+        if args.outfile3:
+            out3_noSort.close()
+
+        CountOut='''
+        reads mapped to alternative genome 1 ({1}): {0}\n
+        reads mapped to alternative genome 2 ({3}): {2}\n
+        undistinguishable reads {4}'''.format(Counts[0], args.outfile1, Counts[1], args.outfile2, Counts[2])
+
+        print CountOut
+
+        if args.coordinateSorting:
+            sort_output(out1)
+            sort_output(out2)
+            if args.outfile3:
+                sort_output(out3)
 
 if __name__ == '__main__':
     main()
