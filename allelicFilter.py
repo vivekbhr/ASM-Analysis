@@ -3,16 +3,6 @@
 '''
 This program filters and splits BAM files processed by suspenders:
 Originally the split script was written by @friedue which I modified extensively.
-Reads are written into different output alignment files (.bam) depending on
-their genomic origin (which is noted in the po:i tag). If a third output file
-is indicated, reads which map equally well at the same position in both genomes
-will also be reported (po:i:3). Currently, this script ignores reads that were
-assigned by suspender's "RANDOM" filter'.
-Possible improvements:
-let user choose which reads should be ignored (not just
-RANDOM reads, perhaps);
-allow SAM format for in- and output;
-multiprocessing
 '''
 
 import sys
@@ -29,7 +19,19 @@ def get_args():
     parser=argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         conflict_handler='resolve',
-        description='Filter or Split suspenders-merged BAM files')
+        description="""
+        Filter or Split suspenders-merged BAM files.
+
+        Filering can be done for a set of blacklisted regions. Random chromosomes or mitochondria.
+        For help, see : allelicFilter.py filter -h
+
+        For splitting, reads are written into different output alignment files (.bam) depending on
+        their genomic origin (which is noted in the po:i tag). If a third output file
+        is indicated, reads which map equally well at the same position in both genomes
+        will also be reported (po:i:3). Currently, this script ignores reads that were
+        assigned by suspender's "RANDOM" filter'.
+        For help, see : allelicFilter.py split -h
+        """)
 
     subparsers = parser.add_subparsers(
         title="commands",
@@ -339,8 +341,8 @@ def main():
             out3_noSort.close()
 
         CountOut='''
-        reads mapped to alternative genome 1 ({1}): {0}\n
-        reads mapped to alternative genome 2 ({3}): {2}\n
+        reads mapped to alternative genome 1 ({1}): {0}
+        reads mapped to alternative genome 2 ({3}): {2}
         undistinguishable reads {4}'''.format(Counts[0], args.outfile1, Counts[1], args.outfile2, Counts[2])
 
         print CountOut
