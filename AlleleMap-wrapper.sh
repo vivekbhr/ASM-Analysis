@@ -2,7 +2,10 @@
 
 ### All the required variable will be stored first
 # usage information
-usage() { echo -e "Usage: $0 -w <working-dir> -c <config-file> -m <maternal-strain-prefix> -p <paternal-strain-prefix> -b <blacklist-regions> -n <sample-name> -t <num-processors>"; exit 1; }
+usage() { echo -e "A pipeline for allele-specific mapping the reads..
+
+Usage:   $0 -w <working-dir> -c <config-file> -m <maternal-strain-prefix> -p <paternal-strain-prefix>
+            -b <blacklist-regions> -n <sample-name> -t <num-processors>"; exit 1; }
 
 # parse commandline arguments
 while getopts ":w:c:m:p:b:n:t:" arg; do
@@ -30,7 +33,7 @@ done
 shift $((OPTIND-1))
 
 ## Check if arguments are valid
-if [[ -z "${workdir}" ]] || [[ -z "${MAT_STRAIN}" ]] || [[ -z "${PAT_STRAIN}" ]] || 
+if [[ -z "${workdir}" ]] || [[ -z "${MAT_STRAIN}" ]] || [[ -z "${PAT_STRAIN}" ]] ||
    [[ -z "${sample}" ]] || [[ -z "${proc}" ]] || [[ -z "${config}" ]] ; then
     usage
 fi
@@ -62,13 +65,13 @@ split=${workdir}/06_splitFilteredBAMs
 
 for dir in ${bowtieOut} ${refmapdir} ${mergedBAMs} ${filteredBAMs} ${split} ${out}; do
 	if [[ ! -d ${dir} ]]; then
-		mkdir ${dir}; else 
+		mkdir ${dir}; else
 		echo "directory ${dir} exists. Files with same samplename will be replaced"
 	fi ; done
 
 ## ------------------------------------------------------ Map and convert
 for genotype in ${MAT_STRAIN} ${PAT_STRAIN}
-do 
+do
 ## 01 Map
 	echo "Sample : " ${sample} ". Mapping to pseudogenome : " $pseudogen/${genotype}
 	${bwt} -x $pseudogen/${genotype} \
@@ -88,7 +91,7 @@ do
 	${bowtieOut}/${genotype}.mod ${bowtieOut}/${genotype}_${sample}.bam \
 	> ${genotype}_${sample}_stdout.txt 2> ${genotype}_${sample}_stderr.txt
 
-## 03 sort 
+## 03 sort
 	${samtools} sort -@ ${proc} -T ${genotype}_${sample} -O bam -n -o ${refmapdir}/${genotype}_${sample}_mapToRef.Rdsortd.bam \
 	${refmapdir}/${genotype}_${sample}_mapToRef.bam
 
@@ -112,7 +115,7 @@ mv ${refmapdir}/${sample}_suspMerged.bam ${mergedBAMs}/
 
 
 ## Filtering for random and blacklisted regions in the dir (need to make blklist optional)
-echo "Filtering and sorting. Sample : ${sample} " 
+echo "Filtering and sorting. Sample : ${sample} "
 ${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${samfilt} --filter_out_from_BED ${blklist} --random \
 --chrM --lowqual | ${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam - # needs sorting here
 # index
@@ -120,7 +123,7 @@ ${samtools} index ${filteredBAMs}/${sample}_filt.bam
 
 ## AllelicFilter.py : Filtering merged BAMS
 echo "Splitting by alleles. Sample : ${sample} "
-${allelefilt} --BAMfile ${filteredBAMs}/${sample}_filt.bam --outfile1 ${split}/${sample}_129S1_sep.bam --outfile2 ${split}/${sample}_CASTEiJ_sep.bam --outfile3 ${split}/${sample}_cannotTell.bam --removeMultiMapped --coordinateSorting 
+${allelefilt} --BAMfile ${filteredBAMs}/${sample}_filt.bam --outfile1 ${split}/${sample}_129S1_sep.bam --outfile2 ${split}/${sample}_CASTEiJ_sep.bam --outfile3 ${split}/${sample}_cannotTell.bam --removeMultiMapped --coordinateSorting
 
 ## DONE
 
