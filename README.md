@@ -17,4 +17,5 @@ Based on AlleleExplorer R package for quantification of allele-specific differen
 AlleleExplorer can be installed and used in R. After installation it can also be run from command line using the wrapper script.
 
 
-Author: @vivekbhr
+***Author: @vivekbhr***
+***License: GPLv3***
