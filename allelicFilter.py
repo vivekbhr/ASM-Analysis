@@ -59,6 +59,8 @@ def get_args():
     filter_mode.add_argument('--multiple', action="store_true",
                  help = "if set, all reads where more than one alignment "
                  "was reported by bowtie2 are removed")
+    filter_mode.add_argument('--lowqual', action="store_true",
+                 help="if set, all low quality reads (mapping quality less than Q30) are removed")
 
     #args = p.parse_args()
 
@@ -256,8 +258,11 @@ def main():
                     continue
                 elif alignNumbers > 1:
                     continue
-
-                line = "\t".join(field)
+        # remove reads with mapping quality below 30, ignore header
+            if args.lowqual and line[0] != '@' and int(field[4]) < 30:
+                continue
+        # Finally print the line
+            line = "\t".join(field)
             print line,
 
 
