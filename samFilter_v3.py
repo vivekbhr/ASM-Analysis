@@ -54,7 +54,7 @@ def main():
         "output. It should be used in a pipeline as follows\n /package/samtools/samtools view -h - | %(prog)s",
         usage = "/package/samtools/samtools view -h - | %(prog)s")
 
-    p.add_argument('--remove_blklist',
+    p.add_argument('--filter_out_from_BED',
                  help="BED file containing regions to filter out. Usually a black list "
                    "regions want to be filter out.",
                  type=argparse.FileType('r'))
