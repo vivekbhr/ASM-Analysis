@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 ## A wrapper for all R functions of AlleleExplorer
 ## Copyright 2015 Vivek Bhardwaj (bhardwaj@ie-freiburg.mpg.de). Licence: GPLv3.
 
