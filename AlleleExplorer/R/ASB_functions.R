@@ -22,7 +22,7 @@ readfiles_chip <- function(csvFile = "testBAMs/testSampleSheet.csv", refAllele =
   
   # readFiles using CSAW
   bam.files <- samp[,6]
-  pe.param <- csaw::readParam(max.frag=400, pe="both") # use the param for pe reads
+  pe.param <- csaw::readParam(max.frag=500, pe="both") # use the param for pe reads
   message("Counting reads in windows")
   counts <- csaw::windowCounts(bam.files = bam.files,param=pe.param)
   
@@ -76,7 +76,7 @@ makeQCplots_chip <- function(chipCountObject,outdir){
   message("Checking appropriate window sizes")
   plotwc <- function(curbam){
     #print(curbam)
-    pe.param <- csaw::readParam(max.frag=400, pe="both") # use the param for pe reads
+    pe.param <- csaw::readParam(max.frag=500, pe="both") # use the param for pe reads
     windowed <- csaw::windowCounts(curbam, spacing=50, width=50, param= pe.param, filter=20)
     rwsms <- rowSums(assay(windowed))
     maxed <- csaw::findMaxima(rowRanges(windowed), range=1000, metric=rwsms)
