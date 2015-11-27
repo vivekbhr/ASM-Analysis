@@ -17,7 +17,7 @@ p <- add_argument(p,"--outdir",help = "Output directory")
 p <- add_argument(p,"--gtf",help = "GTF annotation file for RNA-Seq")
 p <- add_argument(p,"--exclude",help = "Any chromosome to exclude from output")
 p <- add_argument(p,"--threads",help = "Number of cores to use (leave empty for one)")
-
+p <- add_argument(p,"--qcplots",flag = TRUE, help = "Whether you want to make QC plots")
 ## Parse the arguments
 argv <- parse_args(p)
 
@@ -29,6 +29,7 @@ out <- argv$outdir
 gtf <- argv$gtf
 exclude <- argv$exclude
 threads <-argv$threads
+qcplots <-argv$qcplots
 
 ### ----------------------------------  Write and run the functions ---------------------------
 
@@ -42,7 +43,10 @@ if(any(grepl("chip",samp[,1]))){
   tflist <- as.character(unique(chipsamp$tf))
   
   chipCountObject <- readfiles_chip(csvFile = sheet, refAllele = ref)
-  makeQCplots_chip(chipCountObject,out)
+  if(qcplots){
+    message("making QC plots")
+    makeQCplots_chip(chipCountObject,out)
+  } else message("skipping QC plots")
   message("filtering chip by input")
   chipCountObject <- filterByInput_chip(chipCountObject)
   message("normalizing windows by tmm")
