@@ -5,10 +5,10 @@
 usage() { echo -e "A pipeline for allele-specific mapping the reads..
 
 Usage:   $0 -w <working-dir> -c <config-file> -m <maternal-strain-prefix> -p <paternal-strain-prefix>
-            -b <blacklist-regions> -n <sample-name> -t <num-processors>"; exit 1; }
+            -b <blacklist-regions> -n <sample-name> -t <num-processors> -a <aligner (bowtie2/tophat2)> "; exit 1; }
 
 # parse commandline arguments
-while getopts ":w:c:m:p:b:n:t:" arg; do
+while getopts ":w:c:m:p:b:n:t:a:g:" arg; do
     case $arg in
         w) workdir=$OPTARG
            ;;
@@ -23,6 +23,8 @@ while getopts ":w:c:m:p:b:n:t:" arg; do
         n) sample=$OPTARG
            ;;
         t) proc=$OPTARG  # num of processors
+           ;;
+        a) aligner=$OPTARG  # aligner (tophat/bowtie)
            ;;
         \?) usage
            ;;
@@ -76,12 +78,23 @@ for genotype in ${MAT_STRAIN} ${PAT_STRAIN}
 do
 ## 01 Map
 	echo "Sample : " ${sample} ". Mapping to pseudogenome : " $pseudogen/${genotype}
+	if [ ${aligner} = "tophat2" ]; then
+	${tophat} --transcriptome-index $pseudogen/transcriptome_data/Mus_musculus_${genotype}_transcriptomeIndex \
+	 -p ${proc} -o ${bowtieOut} \
+	--no-coverage-search --library-type fr-firststrand \
+	$pseudogen/${genotype} \
+	${fastq}/${sample}_R1.fastq.gz \
+	${fastq}/${sample}_R2.fastq.gz 
+	mv ${bowtieOut}/${sample}/accepted_hits.bam ${bowtieOut}/${genotype}_${sample}
+	else
+#
 	${bwt} -x $pseudogen/${genotype} \
 	-1 ${fastq}/${sample}_R1.fastq.gz \
 	-2 ${fastq}/${sample}_R2.fastq.gz \
 	-X 1000 -p ${proc} --rg-id mpi-ie --rg CN:deep_sequencing_unit --rg PL:illumina \
 	| /package/samtools/samtools view -Sb - | /package/samtools/samtools sort -@ ${proc} - \
 	$bowtieOut/${genotype}_${sample}
+	fi
 	# Index
 	${samtools} index ${bowtieOut}/${genotype}_${sample}.bam
 # Copy the mod file
@@ -118,7 +131,8 @@ mv ${refmapdir}/${sample}_suspMerged.bam ${mergedBAMs}/
 
 ## Filtering for random and blacklisted regions in the dir (Note : need to make blklist optional)
 echo "Filtering and sorting. Sample : ${sample} "
-${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter --remove_blklist ${blklist} --random \
+${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter \
+--remove_blklist ${blklist} --random \
 --chrM --lowqual | ${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam - # needs sorting here
 # index
 ${samtools} index ${filteredBAMs}/${sample}_filt.bam
