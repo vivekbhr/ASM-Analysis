@@ -42,7 +42,7 @@ if(any(grepl("chip",samp[,1]))){
   message("ChIP-Seq samples found. Running allele-specific binding analysis")
   chipsamp <- dplyr::filter(samp,expType == "chip",sampleType == "test")
   tflist <- as.character(unique(chipsamp$tf))
-  
+
   chipCountObject <- readfiles_chip(csvFile = sheet, refAllele = ref)
   if(qcplots){
     message("making QC plots")
@@ -53,14 +53,17 @@ if(any(grepl("chip",samp[,1]))){
   message("normalizing windows by tmm")
   chipCountObject <- tmmNormalize_chip(chipCountObject, plotfile = paste0(out,"/TMM_normalizedCounts.pdf"))
   for(tf in tflist){
-    message(paste0("extracting Db regions for : ",tf))
-    chipResultObject <- getDBregions_chip(chipCountObject,
-                                          plotfile = paste0(out,"/Dispersions.pdf"), tfname = tf)
-    message(paste0("Writing output for : ",tf))
-    writeOutput_chip(chipResultObject, outfileName = paste0(out,"/ASE-result_",tf) , fdr = fdr, annotation = FALSE,
-                     Txdb = TxDb.Mmusculus.UCSC.mm9.knownGene, Orgdb = org.Mm.eg.db)
-  }
-  
+    tryCatch({
+      message(paste0("extracting Db regions for : ",tf))
+      chipResultObject <- getDBregions_chip(chipCountObject,
+                                            plotfile = paste0(out,"/Dispersions.pdf"), tfname = tf)
+      message(paste0("Writing output for : ",tf))
+      writeOutput_chip(chipResultObject, outfileName = paste0(out,"/ASE-result_",tf) , fdr = fdr, annotation = FALSE,
+                       Txdb = TxDb.Mmusculus.UCSC.mm9.knownGene, Orgdb = org.Mm.eg.db)
+
+      }, error=function(e){cat("ERROR :",conditionMessage(e), "\n")}
+        )
+      }
 } else {
   message("ChIP-Seq samples not found.")
 }
@@ -75,14 +78,17 @@ if(any(grepl("rna",samp[,1]))){
                                       outfileName = paste0(out,"/ASE_counts.tab"),
                                       refAllele = ref,userParam = FALSE)
   for(tf in tflist){
-    message(paste0("running differential expression for : ",tf))
-    rnaResultObject <- alleleDiff_rna(rnaCountObject,fdrCutoff = fdr,tfname = tf)
-    plotResults_rna(rnaResultObject,outfile = paste0(out,"resultPlots_RNA_",tf,".pdf"), 
-                    barplot = TRUE, excludeChr = exclude)
-    message(paste0("writing output for : ",tf))
-    writeOutput_rna(rnaResultObject,annotateFrom = "dataset",excludeChr = exclude, 
-                    fdrCutoff = fdr,outfileName = paste0(out,"/ASE-result_",tf) )
-    }
+        tryCatch({
+          message(paste0("running differential expression for : ",tf))
+          rnaResultObject <- alleleDiff_rna(rnaCountObject,fdrCutoff = fdr,tfname = tf)
+          plotResults_rna(rnaResultObject,outfile = paste0(out,"resultPlots_RNA_",tf,".pdf"),
+                          barplot = TRUE, excludeChr = exclude)
+          message(paste0("writing output for : ",tf))
+          writeOutput_rna(rnaResultObject,annotateFrom = "dataset",excludeChr = exclude,
+                          fdrCutoff = fdr,outfileName = paste0(out,"/ASE-result_",tf) )
+          }, error=function(e){cat("ERROR :",conditionMessage(e), "\n")}
+          )
+        }
   } else {
     message("RNA-Seq samples not found.")
 }
