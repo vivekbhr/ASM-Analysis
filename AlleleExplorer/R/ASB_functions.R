@@ -259,7 +259,7 @@ writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE, f
                 if(length(test) > 0){
                   test$score <- -10*log10(tabcom$FDR[is.sig])
                   names(test) <- paste0("region", 1:sum(is.sig))
-                  export(test, paste0(outfileName,".bed"))
+                  rtracklayer::export(test, paste0(outfileName,".bed"))
                 } else {
                   warning("output empty! please lower the fdr threshold.")
                 }
