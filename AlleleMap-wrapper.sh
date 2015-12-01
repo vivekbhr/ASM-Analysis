@@ -79,15 +79,18 @@ do
 ## 01 Map
 	echo "Sample : " ${sample} ". Mapping to pseudogenome : " $pseudogen/${genotype}
 	if [ ${aligner} = "tophat2" ]; then
-	${tophat} --transcriptome-index $pseudogen/transcriptome_data/Mus_musculus_${genotype}_transcriptomeIndex \
-	 -p ${proc} -o ${bowtieOut} \
-	--no-coverage-search --library-type fr-firststrand \
-	$pseudogen/${genotype} \
-	${fastq}/${sample}_R1.fastq.gz \
-	${fastq}/${sample}_R2.fastq.gz 
-	mv ${bowtieOut}/${sample}/accepted_hits.bam ${bowtieOut}/${genotype}_${sample}
+    # makedir
+    mkdir ${bowtieOut}/${genotype}_${sample}/
+    # Map
+    ${tophat} --transcriptome-index $pseudogen/transcriptome_data/Mus_musculus_${genotype}_transcriptomeIndex \
+	   -p ${proc} -o ${bowtieOut}/${genotype}_${sample}/ --no-coverage-search --library-type fr-firststrand \
+     $pseudogen/${genotype} \
+     ${fastq}/${sample}_R1.fastq.gz \
+     ${fastq}/${sample}_R2.fastq.gz
+    # Move
+     mv ${bowtieOut}/${genotype}_${sample}/accepted_hits.bam ${bowtieOut}/${genotype}_${sample}.bam
 	else
-#
+# Map by bowtie
 	${bwt} -x $pseudogen/${genotype} \
 	-1 ${fastq}/${sample}_R1.fastq.gz \
 	-2 ${fastq}/${sample}_R2.fastq.gz \
@@ -95,7 +98,8 @@ do
 	| /package/samtools/samtools view -Sb - | /package/samtools/samtools sort -@ ${proc} - \
 	$bowtieOut/${genotype}_${sample}
 	fi
-	# Index
+
+# Index
 	${samtools} index ${bowtieOut}/${genotype}_${sample}.bam
 # Copy the mod file
 	cp ${pseudogen}/${genotype}.mod ${bowtieOut}/${genotype}.mod
