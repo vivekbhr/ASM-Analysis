@@ -135,9 +135,14 @@ mv ${refmapdir}/${sample}_suspMerged.bam ${mergedBAMs}/
 
 ## Filtering for random and blacklisted regions in the dir (Note : need to make blklist optional)
 echo "Filtering and sorting. Sample : ${sample} "
-${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter \
---remove_blklist ${blklist} --random \
---chrM --lowqual | ${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam - # needs sorting here
+if [[ -z "${blklist}" ]]; then
+  ${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter \
+  --random --chrM --lowqual | ${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam -
+else
+  ${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter \
+  --remove_blklist ${blklist} --random \
+  --chrM --lowqual | ${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam - 
+fi
 # index
 ${samtools} index ${filteredBAMs}/${sample}_filt.bam
 
