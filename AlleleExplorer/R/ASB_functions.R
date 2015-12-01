@@ -261,7 +261,7 @@ writeOutput_chip <- function(chipResultObject, outfileName, annotation = TRUE, f
                   names(test) <- paste0("region", 1:sum(is.sig))
                   export(test, paste0(outfileName,".bed"))
                 } else {
-                  message("output empty! please lower the fdr threshold.")
+                  warning("output empty! please lower the fdr threshold.")
                 }
                 
                 
