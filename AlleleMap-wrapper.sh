@@ -57,7 +57,8 @@ source ${config}
 
 # Raw files
 	fastq=${workdir}/01_rawdata/fastq
-	pseudogen=${workdir}/01_rawdata/pseudogenome # this dir should have mat and pat strain fasta, bwt/hisat indexes, and mod files, the names should be like : <genotype>.fa, <genotype>.bt2, <genotype>.mod etc..
+	pseudogen=${workdir}/01_rawdata/pseudogenome # this dir should have mat and pat strain fasta, bwt/hisat indexes,
+                                              #  and mod files, the names should be like : <genotype>.fa, <genotype>.bt2, <genotype>.mod etc..
 
 # Directories to make
 bowtieOut=${workdir}/02_mappingToPseudogenome
@@ -74,7 +75,7 @@ for dir in ${bowtieOut} ${refmapdir} ${mergedBAMs} ${filteredBAMs} ${split} ${ou
 	fi ; done
 
 ## ------------------------------------------------------ Map and convert
-for genotype in ${MAT_STRAIN} ${PAT_STRAIN}
+for genotype in ${PAT_STRAIN} # ${MAT_STRAIN}
 do
 ## 01 Map
 	echo "Sample : " ${sample} ". Mapping to pseudogenome : " $pseudogen/${genotype}
@@ -108,7 +109,7 @@ do
 	echo "Sample : " ${sample} ". Mapping back to reference genome."
 	${lapels} -f -p ${proc} -o ${refmapdir}/${genotype}_${sample}_mapToRef.bam \
 	${bowtieOut}/${genotype}.mod ${bowtieOut}/${genotype}_${sample}.bam \
-	2> LAPELS_${genotype}_${sample}_stderr.txt
+	2> LAPELS_${genotype}_${sample}.log
 
 ## 03 sort
 	${samtools} sort -@ ${proc} -T ${genotype}_${sample} -O bam -n -o ${refmapdir}/${genotype}_${sample}_mapToRef.Rdsortd.bam \
