@@ -108,7 +108,7 @@ do
 	echo "Sample : " ${sample} ". Mapping back to reference genome."
 	${lapels} -f -p ${proc} -o ${refmapdir}/${genotype}_${sample}_mapToRef.bam \
 	${bowtieOut}/${genotype}.mod ${bowtieOut}/${genotype}_${sample}.bam \
-	> ${genotype}_${sample}_stdout.txt 2> ${genotype}_${sample}_stderr.txt
+	2> LAPELS_${genotype}_${sample}_stderr.txt
 
 ## 03 sort
 	${samtools} sort -@ ${proc} -T ${genotype}_${sample} -O bam -n -o ${refmapdir}/${genotype}_${sample}_mapToRef.Rdsortd.bam \
@@ -141,7 +141,7 @@ if [[ -z "${blklist}" ]]; then
 else
   ${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter \
   --remove_blklist ${blklist} --random \
-  --chrM --lowqual | ${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam - 
+  --chrM --lowqual | ${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam -
 fi
 # index
 ${samtools} index ${filteredBAMs}/${sample}_filt.bam
