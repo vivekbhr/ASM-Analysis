@@ -20,9 +20,9 @@ AlleleExplorer can be installed and used in R. After installation it can also be
 ## installation
 
 1) First Install the mapper :
-    ..* [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml).
-    ..* [tophat2](https://ccb.jhu.edu/software/tophat/index.shtml).
-    ..* [hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml).
+    * [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml).
+    * [tophat2](https://ccb.jhu.edu/software/tophat/index.shtml).
+    * [hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml).
 
 2) Install [suspenders](https://github.com/holtjma/suspenders).
 
