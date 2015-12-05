@@ -2,10 +2,10 @@
 
 ### All the required variable will be stored first
 # usage information
-usage() { echo -e "A pipeline for allele-specific mapping the reads..
+usage() { echo -e "A pipeline for allele-specific mapping of paired-end reads..
 
-Usage:   $0 -w <working-dir> -c <config-file> -m <maternal-strain-prefix> -p <paternal-strain-prefix>
-            -b <blacklist-regions> -n <sample-name> -t <num-processors> -a <aligner (bowtie2/tophat2)> "; exit 1; }
+Usage:   $0 -w <working-dir> -c <config-file> -m <maternal-strain-prefix> -p <paternal-strain-prefix> \
+	-b <blacklist-regions> -n <sample-name> -t <num-processors> -a <aligner (bowtie2/tophat2)> "; exit 1; }
 
 # parse commandline arguments
 while getopts ":w:c:m:p:b:n:t:a:g:" arg; do
@@ -97,7 +97,7 @@ do
 	-2 ${fastq}/${sample}_R2.fastq.gz \
 	-X 1000 -p ${proc} --rg-id mpi-ie --rg CN:deep_sequencing_unit --rg PL:illumina \
 	| /package/samtools/samtools view -Sb - | /package/samtools/samtools sort -@ ${proc} - \
-	$bowtieOut/${genotype}_${sample}
+	${bowtieOut}/${genotype}_${sample}
 	fi
 
 # Index
@@ -107,16 +107,16 @@ do
 
 ## 02 Map to Ref (Lapels)
 	echo "Sample : " ${sample} ". Mapping back to reference genome."
-	${lapels} -f -p ${proc} -o ${refmapdir}/${genotype}_${sample}_mapToRef.bam \
-	${bowtieOut}/${genotype}.mod ${bowtieOut}/${genotype}_${sample}.bam \
-	2> LAPELS_${genotype}_${sample}.log
+	#${lapels} -f -p ${proc} -o ${refmapdir}/${genotype}_${sample}_mapToRef.bam \
+	#${bowtieOut}/${genotype}.mod ${bowtieOut}/${genotype}_${sample}.bam \
+	#2> LAPELS_${genotype}_${sample}.log
 
 ## 03 sort
-	${samtools} sort -@ ${proc} -T ${genotype}_${sample} -O bam -n -o ${refmapdir}/${genotype}_${sample}_mapToRef.Rdsortd.bam \
-	${refmapdir}/${genotype}_${sample}_mapToRef.bam
+	#${samtools} sort -@ ${proc} -T ${genotype}_${sample} -O bam -n -o ${refmapdir}/${genotype}_${sample}_mapToRef.Rdsortd.bam \
+	#${refmapdir}/${genotype}_${sample}_mapToRef.bam
 
 # Remove copied mod file
-	rm ${bowtieOut}/${genotype}.mod*
+	#rm ${bowtieOut}/${genotype}.mod*
 done
 
 
