@@ -107,16 +107,16 @@ do
 
 ## 02 Map to Ref (Lapels)
 	echo "Sample : " ${sample} ". Mapping back to reference genome."
-	#${lapels} -f -p ${proc} -o ${refmapdir}/${genotype}_${sample}_mapToRef.bam \
-	#${bowtieOut}/${genotype}.mod ${bowtieOut}/${genotype}_${sample}.bam \
-	#2> LAPELS_${genotype}_${sample}.log
+	${lapels} -f -p ${proc} -o ${refmapdir}/${genotype}_${sample}_mapToRef.bam \
+	${bowtieOut}/${genotype}.mod ${bowtieOut}/${genotype}_${sample}.bam \
+	2> LAPELS_${genotype}_${sample}.log
 
 ## 03 sort
-	#${samtools} sort -@ ${proc} -T ${genotype}_${sample} -O bam -n -o ${refmapdir}/${genotype}_${sample}_mapToRef.Rdsortd.bam \
-	#${refmapdir}/${genotype}_${sample}_mapToRef.bam
+	${samtools} sort -@ ${proc} -T ${genotype}_${sample} -O bam -n -o ${refmapdir}/${genotype}_${sample}_mapToRef.Rdsortd.bam \
+	${refmapdir}/${genotype}_${sample}_mapToRef.bam
 
 # Remove copied mod file
-	#rm ${bowtieOut}/${genotype}.mod*
+	rm ${bowtieOut}/${genotype}.mod*
 done
 
 
