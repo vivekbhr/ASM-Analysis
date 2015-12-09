@@ -58,7 +58,7 @@ if(any(grepl("chip",samp[,1]))){
       chipResultObject <- getDBregions_chip(chipCountObject,
                                             plotfile = paste0(out,"/Dispersions.pdf"), tfname = tf)
       message(paste0("Writing output for : ",tf))
-      writeOutput_chip(chipResultObject, outfileName = paste0(out,"/ASE-result_",tf) , fdr = fdr, annotation = FALSE,
+      writeOutput_chip(chipResultObject, outfileName = paste0(out,"/ASB-result_",tf) , fdr = fdr, annotation = FALSE,
                        Txdb = TxDb.Mmusculus.UCSC.mm9.knownGene, Orgdb = org.Mm.eg.db)
 
       }, error=function(e){cat("ERROR :",conditionMessage(e), "\n")}
