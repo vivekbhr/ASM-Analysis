@@ -75,70 +75,71 @@ for dir in ${bowtieOut} ${refmapdir} ${mergedBAMs} ${filteredBAMs} ${split} ${ou
 	fi ; done
 
 ## ------------------------------------------------------ Map and convert
-for genotype in ${PAT_STRAIN} # ${MAT_STRAIN}
+for genotype in ${MAT_STRAIN} ${PAT_STRAIN}
 do
 ## 01 Map
 	echo "Sample : " ${sample} ". Mapping to pseudogenome : " $pseudogen/${genotype}
-	if [ ${aligner} = "tophat2" ]; then
+#	if [ ${aligner} = "tophat2" ]; then
     # makedir
-    mkdir ${bowtieOut}/${genotype}_${sample}/
+#    mkdir ${bowtieOut}/${genotype}_${sample}/
     # Map
-    ${tophat} --transcriptome-index $pseudogen/transcriptome_data/Mus_musculus_${genotype}_transcriptomeIndex \
-	   -p ${proc} -o ${bowtieOut}/${genotype}_${sample}/ --no-coverage-search --library-type fr-firststrand \
-     $pseudogen/${genotype} \
-     ${fastq}/${sample}_R1.fastq.gz \
-     ${fastq}/${sample}_R2.fastq.gz
+#    ${tophat} --transcriptome-index $pseudogen/transcriptome_data/Mus_musculus_${genotype}_transcriptomeIndex \
+#	   -p ${proc} -o ${bowtieOut}/${genotype}_${sample}/ --no-coverage-search --library-type fr-firststrand \
+#     $pseudogen/${genotype} \
+#     ${fastq}/${sample}_R1.fastq.gz \
+#     ${fastq}/${sample}_R2.fastq.gz
     # Move
-     mv ${bowtieOut}/${genotype}_${sample}/accepted_hits.bam ${bowtieOut}/${genotype}_${sample}.bam
-	else
+#     mv ${bowtieOut}/${genotype}_${sample}/accepted_hits.bam ${bowtieOut}/${genotype}_${sample}.bam
+#	else
 # Map by bowtie
-	${bwt} -x $pseudogen/${genotype} \
-	-1 ${fastq}/${sample}_R1.fastq.gz \
-	-2 ${fastq}/${sample}_R2.fastq.gz \
-	-X 1000 -p ${proc} --rg-id mpi-ie --rg CN:deep_sequencing_unit --rg PL:illumina \
-	| /package/samtools/samtools view -Sb - | /package/samtools/samtools sort -@ ${proc} - \
-	${bowtieOut}/${genotype}_${sample}
-	fi
+#	${bwt} -x $pseudogen/${genotype} \
+#	-1 ${fastq}/${sample}_R1.fastq.gz \
+#	-2 ${fastq}/${sample}_R2.fastq.gz \
+#	-X 1000 -p ${proc} --rg-id mpi-ie --rg CN:deep_sequencing_unit --rg PL:illumina \
+#	| /package/samtools/samtools view -Sb - | /package/samtools/samtools sort -@ ${proc} - \
+#	${bowtieOut}/${genotype}_${sample}
+#	fi
 
 # Index
-	${samtools} index ${bowtieOut}/${genotype}_${sample}.bam
+#	${samtools} index ${bowtieOut}/${genotype}_${sample}.bam
 # Copy the mod file
-	cp ${pseudogen}/${genotype}.mod ${bowtieOut}/${genotype}.mod
+#	cp ${pseudogen}/${genotype}.mod ${bowtieOut}/${genotype}.mod
 
 ## 02 Map to Ref (Lapels)
 	echo "Sample : " ${sample} ". Mapping back to reference genome."
-	${lapels} -f -p ${proc} -o ${refmapdir}/${genotype}_${sample}_mapToRef.bam \
-	${bowtieOut}/${genotype}.mod ${bowtieOut}/${genotype}_${sample}.bam \
-	2> LAPELS_${genotype}_${sample}.log
+#	${lapels} -f -p ${proc} -o ${refmapdir}/${genotype}_${sample}_mapToRef.bam \
+#	${bowtieOut}/${genotype}.mod ${bowtieOut}/${genotype}_${sample}.bam \
+#	2> LAPELS_${genotype}_${sample}.log
 
 ## 03 sort
-	${samtools} sort -@ ${proc} -T ${genotype}_${sample} -O bam -n -o ${refmapdir}/${genotype}_${sample}_mapToRef.Rdsortd.bam \
-	${refmapdir}/${genotype}_${sample}_mapToRef.bam
+#	${samtools} sort -@ ${proc} -T ${genotype}_${sample} -O bam -n -o ${refmapdir}/${genotype}_${sample}_mapToRef.Rdsortd.bam \
+#	${refmapdir}/${genotype}_${sample}_mapToRef.bam
 
 # Remove copied mod file
-	rm ${bowtieOut}/${genotype}.mod*
+#	rm ${bowtieOut}/${genotype}.mod*
 done
 
 
 ## ------------------------------------------------------- Merge and Filter
 # reset pythonpath
-export PYTHONPATH=
+#export PYTHONPATH=
 ## 04 merge
 echo "Merging mapping : "${sample} ". Files :" ${MAT_STRAIN}_${sample}_mapToRef.Rdsortd.bam ${PAT_STRAIN}_${sample}_mapToRef.Rdsortd.bam
 
-${suspenders} --pileup -p ${proc} -c ${mergedBAMs}/pileupImage_${sample}.png \
-	${refmapdir}/${sample}_suspMerged.bam \
-	${refmapdir}/${MAT_STRAIN}_${sample}_mapToRef.Rdsortd.bam \
-	${refmapdir}/${PAT_STRAIN}_${sample}_mapToRef.Rdsortd.bam
+#${suspenders} --pileup -p ${proc} -c ${mergedBAMs}/pileupImage_${sample}.png \
+#	${refmapdir}/${sample}_suspMerged.bam \
+#	${refmapdir}/${MAT_STRAIN}_${sample}_mapToRef.Rdsortd.bam \
+#	${refmapdir}/${PAT_STRAIN}_${sample}_mapToRef.Rdsortd.bam
 
-mv ${refmapdir}/${sample}_suspMerged.bam ${mergedBAMs}/
+#mv ${refmapdir}/${sample}_suspMerged.bam ${mergedBAMs}/
 
 
 ## Filtering for random and blacklisted regions in the dir (Note : need to make blklist optional)
 echo "Filtering and sorting. Sample : ${sample} "
 if [[ -z "${blklist}" ]]; then
   ${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter \
-  --random --chrM --lowqual | ${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam -
+  --random --chrM --lowqual > /tmp/${sample}.sam
+	${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam /tmp/${sample}.sam
 else
   ${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter \
   --remove_blklist ${blklist} --random \
@@ -149,7 +150,8 @@ ${samtools} index ${filteredBAMs}/${sample}_filt.bam
 
 ## AllelicFilter.py : Filtering merged BAMS
 echo "Splitting by alleles. Sample : ${sample} "
-${allelefilt} split --BAMfile ${filteredBAMs}/${sample}_filt.bam --outfile1 ${split}/${sample}_129S1_sep.bam --outfile2 ${split}/${sample}_CASTEiJ_sep.bam --outfile3 ${split}/${sample}_cannotTell.bam --removeMultiMapped --coordinateSorting
+${allelefilt} split --BAMfile ${filteredBAMs}/${sample}_filt.bam --outfile1 ${split}/${sample}_129S1_sep.bam \
+--outfile2 ${split}/${sample}_CASTEiJ_sep.bam --outfile3 ${split}/${sample}_cannotTell.bam --removeMultiMapped --coordinateSorting
 
 ## DONE
 
