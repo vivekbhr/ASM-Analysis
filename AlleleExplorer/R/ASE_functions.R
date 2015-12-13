@@ -15,36 +15,36 @@
 #' @examples
 #' countFeatures_rna(csvFile = "testBAMs/testSampleSheet.csv",AnnotationFile,nthreads,
 #' outfileName=NULL,refAllele = "pat",userParam = FALSE,...)
-#' 
+#'
 
 countFeatures_rna <- function(csvFile = "testBAMs/testSampleSheet.csv",AnnotationFile,nthreads,
                               outfileName=NULL,refAllele = "pat",userParam = FALSE,...){
-  
+
   # Parse Sample sheet
   samp <- read.csv(csvFile,header=TRUE,
                    colClasses = c("character","character","factor","factor","factor","character"))
   if(any(grepl("rna",samp[,1]))){
     message("Extracting sample Info")
     samp <- samp[which(grepl("rna",samp[,1])),]
-  } else stop("No RNA Samples found for diffBinding test. Check sample sheet")
-  
+  } else stop("No RNA Samples found for differential Expression test. Check sample sheet")
+
   ## make design matrix for DESeq2
   design <- data.frame(row.names = samp[,2] , samp[,3:5]) ## Add: A warning if rownames not uniq
   colnames(design) <- c("condition","allele","tf")
   design$allele <- relevel(design$allele,refAllele)
   design$condition <- relevel(design$condition,"control")
-  
+
   # Set the TF corresponding to control as the reference
   reftf <- as.character(unique(design[which(design$condition == "control"),"tf"]))
-  if(length(reftf) != 1) stop("Condition 'control' has multiple tfs associated. 
+  if(length(reftf) != 1) stop("Condition 'control' has multiple tfs associated.
                               Make sure you have only one tf as control")
   design$tf <- relevel(design$tf,reftf)
-  
+
   # finally save the name of ref and alt allele
   altAllele <- unique(design[which(design$allele != refAllele),"allele"])
   if(length(altAllele) != 1) stop("More than one alternative alleles in samplesheet?")
   alleleinfo <- data.frame(refAllele = refAllele, altAllele = altAllele)
-  
+
   ## Count the reads
   bam.files <- samp[,6]
   message("Using Default options for Allele-Specific Expression")
@@ -59,13 +59,13 @@ countFeatures_rna <- function(csvFile = "testBAMs/testSampleSheet.csv",Annotatio
                                               isPairedEnd=TRUE,requireBothEndsMapped=FALSE,checkFragLength=FALSE,
                                               nthreads=nthreads,strandSpecific=2,minMQS=0,countPrimaryAlignmentsOnly=TRUE)
   }
-  # Save Fcount output 
+  # Save Fcount output
   colnames(rnaCountObject$counts) <- samp[,2] # change colnames to samplenames
   rnaCountObject$targets <- samp[,2] # changed targets(just another df) to samplenames
   if(!(is.null(outfileName))){
     write.table(rnaCountObject$counts,outfileName,sep="\t",row.names=F,quote=F)
   }
-  
+
   ## Make the output
   rnaCountObject$design <- design
   rnaCountObject$alleleinfo <- alleleinfo
@@ -81,23 +81,23 @@ countFeatures_rna <- function(csvFile = "testBAMs/testSampleSheet.csv",Annotatio
 #' @return rnaResultObject
 #' @examples
 #' alleleDiff_rna(rnaCountObject,fdrCutoff = 0.01,tfname = "mof")
-#' 
+#'
 
-alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){ 
-  
+alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){
+
   countdata <- rnaCountObject$counts
   designmat <- rnaCountObject$design
   alt <- as.character(rnaCountObject$alleleinfo$altAllele)
   # Run DESeq (all info already in the rnaCountObject)
   dds <- DESeq2::DESeqDataSetFromMatrix(countdata,designmat,
                                         design = ~ tf * allele)
-  dds <- DESeq2::DESeq(dds,betaPrior = FALSE)  
+  dds <- DESeq2::DESeq(dds,betaPrior = FALSE)
   # Get results
   message("DESeq finished. Now extracting results.")
-  
+
   query <- paste0("tf",tfname,".allele",alt)
   ddr = DESeq2::results(dds, name = query, cooksCutoff = FALSE,alpha = fdrCutoff)
-  
+
   # Return outputs
   rnaCountObject$DEdataSet <- dds
   rnaCountObject$DEresult <- ddr
@@ -113,7 +113,7 @@ alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){
 #' @return A pdf file with QC and results plots
 #' @examples
 #' plotResults_rna(rnaResultObject,outfile = "resultPlots_RNA.pdf")
-#' 
+#'
 ## Function requires : vsn, DESeq2 > 1.10, pheatmap, RColorBrewer, ggplot2
 
 plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", barplot = TRUE,
@@ -122,7 +122,7 @@ plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", bar
   ddr <- rnaResultObject$DEresult
   rld <- DESeq2::rlog(dds) #rlog transform
   vsd <- DESeq2::varianceStabilizingTransformation(dds) # vst transform
-  
+
   pdf(outfile)
   # Plot transformed counts
   notAllZero <- (rowSums(counts(dds))>0)
@@ -137,7 +137,7 @@ plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", bar
   pheatmap::pheatmap(assay(rld)[select,], cluster_rows=FALSE,cluster_cols=FALSE, annotation_col=df)
   pheatmap::pheatmap(assay(vsd)[select,], cluster_rows=FALSE, show_rownames=FALSE,
                      cluster_cols=FALSE, annotation_col=df)
-  
+
   # Heatmap of sample to sample dist
   sampleDists <- dist(t(assay(rld)))
   sampleDistMatrix <- as.matrix(sampleDists)
@@ -148,14 +148,14 @@ plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", bar
                      clustering_distance_rows=sampleDists,
                      clustering_distance_cols=sampleDists,
                      col=colors)
-  
+
   # PCA plot of all samples
   data <- plotPCA(rld, intgroup=c("condition", "allele"), returnData=TRUE)
   percentVar <- round(100 * attr(data, "percentVar"))
   ggplot2::ggplot(data, ggplot2::aes(PC1, PC2, color=condition, shape=allele)) + ggplot2::geom_point(size=3) +
     ggplot2::xlab(paste0("PC1: ",percentVar[1],"% variance")) +
     ggplot2::ylab(paste0("PC2: ",percentVar[2],"% variance"))
-  
+
   # Number of diffexp genes
   DESeq2::plotMA(ddr, main="MAplot: Genes with allelic bias", ylim=c(-2,2))
   if(barplot == TRUE){
@@ -168,7 +168,7 @@ plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", bar
     rnaResultObject$alleleinfo$refAllele %>% as.character() -> ref
     rnaResultObject$alleleinfo$altAllele %>% as.character() -> alt
     reshape2::melt(data.frame(allele = c(ref,alt), genes = c(refup,altup))) -> plotdat
-      ggplot2::ggplot(plotdat,ggplot2::aes(allele,value)) + 
+      ggplot2::ggplot(plotdat,ggplot2::aes(allele,value)) +
           ggplot2::geom_bar(stat = "identity",position = "dodge") +
               ggplot2::labs(y = "Biased genes") + ggplot2::theme_gray(base_size = 16)
   }
@@ -187,11 +187,11 @@ plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", bar
 #' @examples
 #' writeOutput_rna(rnaResultObject,annotateFrom = "dataset", species = "Mus musculus",
 #' excludeChr = "chr12",fdrCutoff = 0.01,outfileName)
-#' 
+#'
 
 writeOutput_rna <- function(rnaResultObject,annotateFrom = "dataset", species = "Mus musculus",
                             excludeChr = "chr12",fdrCutoff = 0.01,outfileName){
-  
+
   results <- as.data.frame(rnaResultObject$DEresult)
   ## Get annotation
   if(annotateFrom == "ensembl"){
@@ -202,7 +202,7 @@ writeOutput_rna <- function(rnaResultObject,annotateFrom = "dataset", species = 
     dataset <- biomaRt::listDatasets(mart)
     dataset <- as.character(dataset[grep(species,dataset[,2]),1])
     mart <- biomaRt::useDataset(dataset, mart=mart)
-    info <- biomaRt::getBM(attributes=c("ensembl_gene_id", "chromosome_name", "strand", "start_position", 
+    info <- biomaRt::getBM(attributes=c("ensembl_gene_id", "chromosome_name", "strand", "start_position",
                                         "end_position", "gene_biotype","external_gene_name"), mart=mart)
     info$strand <- gsub("-1","-",info$strand)
     info$strand <- gsub("1","+",info$strand)
@@ -215,7 +215,7 @@ writeOutput_rna <- function(rnaResultObject,annotateFrom = "dataset", species = 
     }
   # Add annotation
   results <- merge(results,info,by.x = 0,by.y=1,all.x = TRUE)
-  
+
   ## Filter by Cutoff or chromosome if given
   if(!(is.null(fdrCutoff))){
     results <- results[results$padj < fdrCutoff,]
@@ -223,15 +223,15 @@ writeOutput_rna <- function(rnaResultObject,annotateFrom = "dataset", species = 
   if(!(is.null(excludeChr))){
     results <- dplyr::filter(results, !(excludeChr %in% Chr))
   }
-  
+
   ## Add another column for allelic bias
   refAllele = rnaResultObject$alleleinfo$refAllele
   altAllele = rnaResultObject$alleleinfo$altAllele
   results$Status <- ifelse(results$log2FoldChange > 1, paste0(altAllele,"_biased"),
                            ifelse(results$log2FoldChange < -1, paste0(refAllele,"_biased"),
                                   "NA"))
-  
+
   ## Write back
   write.csv(results,file = outfileName,quote = FALSE,row.names = FALSE)
-  
+
 }
