@@ -12,6 +12,8 @@
 #' @param refAllele Reference Allele (name must match the name in samplesheet)
 #' @param userParam Make it TRUE if you want to enter your own featurecounts parameters
 #' @return rnaCountObject : a list with counts and sampleinfo
+#' 
+#' @export
 #' @examples
 #' countFeatures_rna(csvFile = "testBAMs/testSampleSheet.csv",AnnotationFile,nthreads,
 #' outfileName=NULL,refAllele = "pat",userParam = FALSE,...)
@@ -79,6 +81,7 @@ countFeatures_rna <- function(csvFile = "testBAMs/testSampleSheet.csv",Annotatio
 #' @param fdrCutoff FDR cutoff for differential expression
 #' @param tfname Name of TF to get the differential expression (must match the name in samplesheet)
 #' @return rnaResultObject
+#' @export
 #' @examples
 #' alleleDiff_rna(rnaCountObject,fdrCutoff = 0.01,tfname = "mof")
 #'
@@ -111,10 +114,11 @@ alleleDiff_rna <- function(rnaCountObject,fdrCutoff = 0.01,tfname = "mof"){
 #' @param barplot TRUE/FALSE whether you want the barplot for allele-biased gene numbers
 #' @param excludeChr The chromosome to exclude from the barplot (if barplot = TRUE)
 #' @return A pdf file with QC and results plots
+#' 
+#' @export
 #' @examples
 #' plotResults_rna(rnaResultObject,outfile = "resultPlots_RNA.pdf")
 #'
-## Function requires : vsn, DESeq2 > 1.10, pheatmap, RColorBrewer, ggplot2
 
 plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", barplot = TRUE,
                             fdrCutoff = 0.01, excludeChr = "chr12" ){
@@ -152,7 +156,8 @@ plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", bar
   # PCA plot of all samples
   data <- plotPCA(rld, intgroup=c("condition", "allele"), returnData=TRUE)
   percentVar <- round(100 * attr(data, "percentVar"))
-  ggplot2::ggplot(data, ggplot2::aes(PC1, PC2, color=condition, shape=allele)) + ggplot2::geom_point(size=3) +
+  ggplot2::ggplot(data, ggplot2::aes(PC1, PC2, color=condition, shape=allele)) + 
+    ggplot2::geom_point(size=3) +
     ggplot2::xlab(paste0("PC1: ",percentVar[1],"% variance")) +
     ggplot2::ylab(paste0("PC2: ",percentVar[2],"% variance"))
 
@@ -184,6 +189,8 @@ plotResults_rna <- function(rnaResultObject,outfile = "resultPlots_RNA.pdf", bar
 #' @param fdrCutoff fdr cutoff (same as in previous script)
 #' @param outfileName File to write the output in
 #' @return csv file with output
+#' 
+#' @export
 #' @examples
 #' writeOutput_rna(rnaResultObject,annotateFrom = "dataset", species = "Mus musculus",
 #' excludeChr = "chr12",fdrCutoff = 0.01,outfileName)

@@ -1,12 +1,23 @@
 Package: AlleleExplorer
 Type: Package
 Title: Calculate Allele-specific binding and expression using mapped files
-Version: 0.1
+Version: 0.0.1
 Date: 2015-05-07
 Author: Vivek Bhardwaj
 Maintainer: Vivek Bhardwaj <bhardwaj@ie-freiburg.mpg.de>
-Depends: R (>= 3.1.0), DESeq2 (>= 1.8.1),csaw, dplyr, reshape2, ggplot2, biomaRt, vsn, pheatmap, RColorBrewer
-Imports :
+Depends:
+    R (>= 3.1.0)
+Imports:
+    DESeq2 (>= 1.8.1),csaw,
+    dplyr,
+    reshape2,
+    ggplot2,
+    biomaRt,
+    vsn,
+    pheatmap,
+    RColorBrewer,
+    Rsubread
+biocViews: wrappers, allelespecific, alleleexplorer
 Description: part of the allele-specific mapping and analysis package.
 License: GPL 3.0
-
+RoxygenNote: 5.0.1
