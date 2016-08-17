@@ -20,8 +20,8 @@ AlleleExplorer can be installed and used in R. After installation it can also be
 ## Installation
 
 1) First Install one of the mappers :
-    * [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml).
-    * [tophat2](https://ccb.jhu.edu/software/tophat/index.shtml).
+   * For Chip-Seq : [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml).
+   * For RNA-Seq : [tophat2](https://ccb.jhu.edu/software/tophat/index.shtml).
 
 2) Install [suspenders](https://github.com/vivekbhr/suspenders). : This is a modified version of original suspenders package by @holtzma, with multiple bigfixes.
 
