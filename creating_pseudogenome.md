@@ -15,7 +15,7 @@ VCF_INDELS=/path/to/indels.vcf # like snps.vcf, contains information about the g
 
 ##### information
 
-These variables should be set regardless whether a MOD file is available already or not
+Set some Environment Variables.
 
 On terminal, type :
 
@@ -33,13 +33,16 @@ I recommend installing MiniConda/AnaConda before installing MODtools.
 #### Installing MiniConda (terminal)
 
 ```
-
+wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh # 64 bit bash installer
+bash Miniconda3-latest-Linux-x86_64.sh
 ```
 
 #### Install MODtools
 
-```
+After you install conda, restart your terminal and type :
 
+```
+pip install modtools
 ```
 
 ### Running MODtools
@@ -51,7 +54,7 @@ MODtools contain three programs.
 3. insilico
 
 
-###  I.1. Meta-data for reference genome
+###  I.1. Create Meta-data for reference genome
 
 -->  get_refmeta
 
