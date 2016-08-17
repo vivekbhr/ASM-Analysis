@@ -1,9 +1,13 @@
 ## Creating pseudogenome to use with AlleleExplorer
 
+### You will need a MOD file
 
-* MOD file -- if the MOD file is not available, it must be created or downloaded
+MOD file is a map of coordinates between genomes. If the MOD file is not available, it must be created or downloaded
+
 * For mouse genomes, Check whether your MOD file is available [here](http://www.csbio.unc.edu/CCstatus/index.py?run=Pseudo "MOD files supplied by Huang et al.") 
 * Otherwise, you will need VCF files with the information for your strain(s) of interest and their differences to the reference genome and the reference genome FASTA file:
+
+##### Set some Environment Variables.
 
 On terminal, type :
 
@@ -13,16 +17,12 @@ VCF_SNP=/path/to/snps.vcf # must contain the information about genetic variants 
 VCF_INDELS=/path/to/indels.vcf # like snps.vcf, contains information about the genetic variations
 ```
 
-##### information
-
-Set some Environment Variables.
-
 On terminal, type :
 
 ```
-REF_GENOME=ce10 # reference genome
-MAT_STRAIN=A # maternal strain # must match entry from to vcf column
-PAT_STRAIN=B # paternal strain # must match entry from vcf column
+REF_GENOME=dm6 # name of reference genome
+MAT_STRAIN=A # maternal strain (must match entry from to vcf column)
+PAT_STRAIN=B # paternal strain (must match entry from vcf column)
 CHROMOSOMES=1,2,3,X # in case, one is interested in a couple of chromosomes only
 ```
 
