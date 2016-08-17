@@ -63,6 +63,8 @@ get_refmeta -o ${REF_GENOME}.meta ${REF_GENOME} ${REF_FASTA}
 
 ##### a) indexing of VCF files
 
+I assume we are using a VCF file with SNPs and another with Indels. But it's not necessory to use InDels, so we can skip it. All subsequent steps will be faster if we don't use InDels, but we also loose some mapping power.
+
 ```
 for vcf in ${VCF_INDELS} ${VCF_SNP}
 do
