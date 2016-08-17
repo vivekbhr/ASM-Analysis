@@ -50,7 +50,7 @@ MODtools contain three programs.
 3. insilico
 
 
-###  I.1. Create Meta-data for reference genome
+###  1. Create Meta-data for reference genome
 
 **-->  get_refmeta**
 
@@ -59,7 +59,7 @@ get_refmeta -o ${REF_GENOME}.meta ${REF_GENOME} ${REF_FASTA}
 ```
 
 
-### I.2. generating MOD files
+### 2. generating MOD files
 
 ##### a) indexing of VCF files
 
@@ -91,7 +91,7 @@ cat ${REF_GENOME}_SNPs_${genotype}.mod ${REF_GENOME}_indels_${genotype}.mod |\
 sort -k2,2n -k3,3n | uniq | awk -f changeChrNamesInMODFile.awk - > ${REF_GENOME}_indels_SNPs_${genotype}_changedChr.mod 
 ```
 
-### I.3. Generating pseudogenomes
+### 3. Generating pseudogenomes
 
 **--> insilico**
 
