@@ -26,12 +26,83 @@ PAT_STRAIN=B # paternal strain # must match entry from vcf column
 CHROMOSOMES=1,2,3,X # in case, one is interested in a couple of chromosomes only
 ```
 
-##### programs
+### Installing MODtools
 
-###### MOD file generation
+I recommend installing MiniConda/AnaConda before installing MODtools.
 
-lapels comes with a set of supplementary scripts that can be used to generate the MOD file if needed:
+#### Installing MiniConda (terminal)
+
+```
+
+```
+
+#### Install MODtools
+
+```
+
+```
+
+### Running MODtools
+
+MODtools contain three programs.
 
 1. get_refmeta
 2. vcf2mod
 3. insilico
+
+
+###  I.1. Meta-data for reference genome
+
+-->  get_refmeta
+
+```
+get_refmeta -o ${REF_GENOME}.meta ${REF_GENOME} ${REF_FASTA}
+```
+
+
+### I.2. generating MOD files
+
+##### a) indexing of VCF files
+
+```
+for vcf in ${VCF_INDELS} ${VCF_SNP}
+do
+    tabix-0.2.6/bgzip -c ${vcf} > ${vcf}.gz
+	  tabix-0.2.6/tabix -p vcf ${vcf}.gz
+done
+```
+##### b) VCF to MOD format
+
+--> vcf2mod
+
+1 MOD file per VCF file (SNPs, INDELS) and genotype (maternal, paternal)
+SNPs with bad quality (FI tag = 0) will be discarded
+
+```
+vcf2mod -c ${CHROMOSOMES} -f \
+  -o ${REF_GENOME}_SNPs_${genotype}.mod \
+  ${REF_GENOME} ${REF_GENOME}.meta \
+	${genotype} ${VCF_SNP} 2> vcf2mod.log
+```
+
+##### c) merge MOD files for SNPs and indels per genotype
+
+```
+cat ${REF_GENOME}_SNPs_${genotype}.mod ${REF_GENOME}_indels_${genotype}.mod |\
+sort -k2,2n -k3,3n | uniq | awk -f changeChrNamesInMODFile.awk - > ${REF_GENOME}_indels_SNPs_${genotype}_changedChr.mod 
+```
+
+### I.3. Generating pseudogenomes
+
+--> insilico
+
+CAVE: after this step, the MOD file will be gzipped (without any indication in the file name)
+
+```
+insilico \
+	${REF_GENOME}_indels_SNPs_${genotype}_changedChr.mod \
+	${REF_FASTA} -v -f \
+	-o pseudogenome_${REF_GENOME}_${genotype}.fa > insilico.log 
+```
+
+---------------------------------------
