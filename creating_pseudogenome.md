@@ -7,7 +7,7 @@ MOD file is a map of coordinates between genomes. If the MOD file is not availab
 * For mouse genomes, Check whether your MOD file is available [here](http://www.csbio.unc.edu/CCstatus/index.py?run=Pseudo "MOD files supplied by Huang et al.") 
 * Otherwise, you will need VCF files with the information for your strain(s) of interest and their differences to the reference genome and the reference genome FASTA file:
 
-##### Set some Environment Variables.
+### Set some Environment Variables.
 
 On terminal, type :
 
@@ -15,11 +15,7 @@ On terminal, type :
 REF_FASTA=/path/to/ref.fa # fasta file for reference genome, e.g. mm9, dm3, ce10....
 VCF_SNP=/path/to/snps.vcf # must contain the information about genetic variants for at least both strains of interest
 VCF_INDELS=/path/to/indels.vcf # like snps.vcf, contains information about the genetic variations
-```
 
-On terminal, type :
-
-```
 REF_GENOME=dm6 # name of reference genome
 MAT_STRAIN=A # maternal strain (must match entry from to vcf column)
 PAT_STRAIN=B # paternal strain (must match entry from vcf column)
@@ -56,7 +52,7 @@ MODtools contain three programs.
 
 ###  I.1. Create Meta-data for reference genome
 
--->  get_refmeta
+**-->  get_refmeta**
 
 ```
 get_refmeta -o ${REF_GENOME}.meta ${REF_GENOME} ${REF_FASTA}
@@ -76,7 +72,7 @@ done
 ```
 ##### b) VCF to MOD format
 
---> vcf2mod
+**--> vcf2mod**
 
 1 MOD file per VCF file (SNPs, INDELS) and genotype (maternal, paternal)
 SNPs with bad quality (FI tag = 0) will be discarded
@@ -97,7 +93,7 @@ sort -k2,2n -k3,3n | uniq | awk -f changeChrNamesInMODFile.awk - > ${REF_GENOME}
 
 ### I.3. Generating pseudogenomes
 
---> insilico
+**--> insilico**
 
 CAVE: after this step, the MOD file will be gzipped (without any indication in the file name)
 
