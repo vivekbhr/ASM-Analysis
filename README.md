@@ -35,7 +35,7 @@ AlleleExplorer can be installed and used in R. After installation it can also be
 
 ### Preparing Files
 
-1) To use AlleleExplorer, you need to first create the maternal and paternal pseudogenomes using ModTools.
+1) To use AlleleExplorer, you need to first create the maternal and paternal pseudogenomes using ModTools. Check out how to do it [here](https://github.com/vivekbhr/AlleleExplorer/blob/master/creating_pseudogenome.md)
 
 2) Place the pseudogenome and the bowtie/tophat indexes in a directory named *01_rawdata/pseudogenome* 
    in your working directory.
