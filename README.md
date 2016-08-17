@@ -33,14 +33,18 @@ AlleleExplorer can be installed and used in R. After installation it can also be
 
 ## Usage
 
-1) To use AlleleExplorer, you need to first create the maternal and paternal pseudogenomes ModTools.
+### Preparing Files
+
+1) To use AlleleExplorer, you need to first create the maternal and paternal pseudogenomes using ModTools.
 
 2) Place the pseudogenome and the bowtie/tophat indexes in a directory named *01_rawdata/pseudogenome* 
    in your working directory.
 
 3) Place the raw fastq files in the directory  *01_rawdata/fastq* in your working directory.
 
-3) Run AlleleMap-wrapper (see tool help).
+### Run AlleleExplorer
+
+3) Run AlleleMap-wrapper (see tool help), to map the fastqs to reference genome. You will need a **config file** for this, explaining the executable locations.
 
 5) Prepare a sampleSheet for AlleleEx-wrapper, indicating the maternal/paternal mapped file location, 
    sample names etc. (see example samplesheet).
