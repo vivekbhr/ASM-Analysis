@@ -90,7 +90,7 @@ vcf2mod -c ${CHROMOSOMES} -f \
 
 ```
 cat ${REF_GENOME}_SNPs_${genotype}.mod ${REF_GENOME}_indels_${genotype}.mod |\
-sort -k2,2n -k3,3n | uniq > ${REF_GENOME}_indels_SNPs_${genotype}_changedChr.mod 
+sort -k2,2n -k3,3n | uniq > ${REF_GENOME}_indels_SNPs_${genotype}.mod 
 ```
 
 ### 3. Generating pseudogenomes
