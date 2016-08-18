@@ -76,14 +76,17 @@ done
 
 **--> vcf2mod**
 
-1 MOD file per VCF file (SNPs, INDELS) and genotype (maternal, paternal)
+1 MOD file per VCF file (SNPs, INDELS) and genotype (maternal, paternal).
 SNPs with bad quality (FI tag = 0) will be discarded
 
 ```
+for genotype in ${MAT_STRAIN} ${PAT_STRAIN}
+do
 vcf2mod -c ${CHROMOSOMES} -f \
   -o ${REF_GENOME}_SNPs_${genotype}.mod \
   ${REF_GENOME} ${REF_GENOME}.meta \
-	${genotype} ${VCF_SNP} 2> vcf2mod.log
+	${genotype} ${VCF_SNP} 2>> vcf2mod.log
+done
 ```
 
 ##### c) merge MOD files for SNPs and indels per genotype
