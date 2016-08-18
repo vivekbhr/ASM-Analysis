@@ -91,6 +91,8 @@ done
 
 ##### c) merge MOD files for SNPs and indels per genotype
 
+(skip this step if you used SNPs and InDels from the same file)..
+
 ```
 cat ${REF_GENOME}_SNPs_${genotype}.mod ${REF_GENOME}_indels_${genotype}.mod |\
 sort -k2,2n -k3,3n | uniq > ${REF_GENOME}_indels_SNPs_${genotype}.mod 
