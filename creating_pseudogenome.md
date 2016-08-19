@@ -30,7 +30,7 @@ I recommend installing MiniConda/AnaConda before installing MODtools.
 
 ```
 wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh # 64 bit bash installer
-bash Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda2-latest-Linux-x86_64.sh
 ```
 
 #### Install MODtools
