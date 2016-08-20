@@ -106,7 +106,7 @@ CAVE: after this step, the MOD file will be gzipped (without any indication in t
 
 ```
 insilico \
-	${REF_GENOME}_indels_SNPs_${genotype}_changedChr.mod \
+	${REF_GENOME}_indels_SNPs_${genotype}.mod \
 	${REF_FASTA} -v -f \
 	-o pseudogenome_${REF_GENOME}_${genotype}.fa > insilico.log 
 ```
