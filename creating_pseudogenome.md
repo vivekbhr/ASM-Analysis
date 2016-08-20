@@ -94,8 +94,11 @@ done
 (skip this step if you used SNPs and InDels from the same file)..
 
 ```
+for genotype in ${MAT_STRAIN} ${PAT_STRAIN}
+do
 cat ${REF_GENOME}_SNPs_${genotype}.mod ${REF_GENOME}_indels_${genotype}.mod |\
 sort -k2,2n -k3,3n | uniq > ${REF_GENOME}_indels_SNPs_${genotype}.mod 
+done
 ```
 
 ### 3. Generating pseudogenomes
@@ -105,10 +108,13 @@ sort -k2,2n -k3,3n | uniq > ${REF_GENOME}_indels_SNPs_${genotype}.mod
 CAVE: after this step, the MOD file will be gzipped (without any indication in the file name)
 
 ```
+for genotype in ${MAT_STRAIN} ${PAT_STRAIN}
+do
 insilico \
 	${REF_GENOME}_indels_SNPs_${genotype}.mod \
 	${REF_FASTA} -v -f \
 	-o pseudogenome_${REF_GENOME}_${genotype}.fa > insilico.log 
+done
 ```
 
 ---------------------------------------
