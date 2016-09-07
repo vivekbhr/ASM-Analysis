@@ -20,8 +20,8 @@ AlleleExplorer can be installed and used in R. After installation it can also be
 ## Installation
 
 1) First Install one of the mappers :
-    * [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml).
-    * [tophat2](https://ccb.jhu.edu/software/tophat/index.shtml).
+   * For Chip-Seq : [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml).
+   * For RNA-Seq : [tophat2](https://ccb.jhu.edu/software/tophat/index.shtml).
 
 2) Install [suspenders](https://github.com/vivekbhr/suspenders). : This is a modified version of original suspenders package by @holtzma, with multiple bigfixes.
 
@@ -33,17 +33,21 @@ AlleleExplorer can be installed and used in R. After installation it can also be
 
 ## Usage
 
-1) To use AlleleExplorer, you need to first create the maternal and paternal pseudogenomes ModTools.
+### Preparing Files
+
+1) To use AlleleExplorer, you need to first create the maternal and paternal pseudogenomes using ModTools. Check out how to do it [here](https://github.com/vivekbhr/AlleleExplorer/blob/master/creating_pseudogenome.md)
 
 2) Place the pseudogenome and the bowtie/tophat indexes in a directory named *01_rawdata/pseudogenome* 
    in your working directory.
 
 3) Place the raw fastq files in the directory  *01_rawdata/fastq* in your working directory.
 
-3) Run AlleleMap-wrapper (see tool help).
+### Run AlleleExplorer
 
-5) Prepare a sampleSheet for AlleleEx-wrapper, indicating the maternal/paternal mapped file location, 
-   sample names etc. (see example samplesheet).
+3) Run AlleleMap-wrapper (see tool help), to map the fastqs to reference genome. You will need a **config file** for this, explaining the executable locations.
+
+5) Prepare a sampleSheet for AlleleEx-wrapper, indicating the maternal/paternal mapped file location, sample names etc. (see example samplesheet).
+
 6) Run AlleleEx-wrapper as `Rscript AlleleEx-wrapper` (see help, -h) for help.
 
 
