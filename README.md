@@ -44,7 +44,7 @@ AlleleExplorer can be installed and used in R. After installation it can also be
 
 ### Run AlleleExplorer
 
-3) Run AlleleMap-wrapper (see tool help), to map the fastqs to reference genome. You will need a **config file** for this, explaining the executable locations (eg. [alleleMap.config](./alleleMap.config).
+3) Run AlleleMap-wrapper (see tool help), to map the fastqs to reference genome. You will need a **config file** for this, explaining the executable locations (eg. [alleleMap.config](./alleleMap.config) ).
 
 5) Prepare a sampleSheet for AlleleEx-wrapper, indicating the maternal/paternal mapped file location, sample names etc. (see example samplesheet).
 
