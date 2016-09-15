@@ -96,7 +96,7 @@ do
 	-1 ${fastq}/${sample}_R1.fastq.gz \
 	-2 ${fastq}/${sample}_R2.fastq.gz \
 	-X 1000 -p ${proc} --rg-id mpi-ie --rg CN:deep_sequencing_unit --rg PL:illumina \
-	| /package/samtools/samtools view -Sb - | /package/samtools/samtools sort -@ ${proc} - \
+	| ${samtools} view -Sb - | ${samtools} sort -@ ${proc} - \
 	${bowtieOut}/${genotype}_${sample}
 	fi
 
@@ -150,8 +150,8 @@ ${samtools} index ${filteredBAMs}/${sample}_filt.bam
 
 ## AllelicFilter.py : Filtering merged BAMS
 echo "Splitting by alleles. Sample : ${sample} "
-${allelefilt} split --BAMfile ${filteredBAMs}/${sample}_filt.bam --outfile1 ${split}/${sample}_129S1_sep.bam \
---outfile2 ${split}/${sample}_CASTEiJ_sep.bam --outfile3 ${split}/${sample}_cannotTell.bam --removeMultiMapped --coordinateSorting
+${allelefilt} split --BAMfile ${filteredBAMs}/${sample}_filt.bam --outfile1 ${split}/${sample}_${MAT_STRAIN}_sep.bam \
+--outfile2 ${split}/${sample}_${PAT_STRAIN}_sep.bam --outfile3 ${split}/${sample}_cannotTell.bam --removeMultiMapped --coordinateSorting
 
 ## DONE
 
