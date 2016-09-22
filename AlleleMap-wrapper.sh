@@ -90,7 +90,7 @@ do
      ${fastq}/${sample}_R2.fastq.gz
     # Move
      mv ${bowtieOut}/${genotype}_${sample}/accepted_hits.bam ${bowtieOut}/${genotype}_${sample}.bam
-#	else
+	else
 # Map by bowtie
 	${bwt} -x $pseudogen/${genotype} \
 	-1 ${fastq}/${sample}_R1.fastq.gz \
