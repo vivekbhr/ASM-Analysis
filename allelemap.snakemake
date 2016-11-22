@@ -1,0 +1,61 @@
+#!/bin/bash
+
+### All the required variable will be stored first
+
+workdir=w
+config=c
+MAT_STRAIN=c #129S1 # refers to vcf column
+PAT_STRAIN=p  #CASTEiJ # refers to vcf column
+blklist=b  #blacklist regions to remove "/data/manke/repository/misc/annotations/blacklist_ENCODE/mm9-blacklist.bed"
+sample=n
+proc=t  # num of processors
+aligner=a  # aligner (tophat/bowtie)
+
+## Source config file
+source ${config}
+
+# Raw files
+	fastq=${workdir}/01_rawdata/fastq
+	pseudogen=${workdir}/01_rawdata/pseudogenome # this dir should have mat and pat strain fasta, bwt/hisat indexes,
+                                              #  and mod files, the names should be like : <genotype>.fa, <genotype>.bt2, <genotype>.mod etc..
+
+# Directories to make
+bowtieOut=${workdir}/02_mappingToPseudogenome
+refmapdir=${workdir}/03_mappingBackToRefgenome
+mergedBAMs=${workdir}/04_mergeMappings
+filteredBAMs=${workdir}/05_filterMergedBAMs
+split=${workdir}/06_splitFilteredBAMs
+
+SAMPLES, = glob_wildcards(join(FASTQ_DIR, '{sample,[^/]+}_R1.fastq.gz'))
+
+## ------------------------------------------------------ RULES
+rule all:
+	input:
+		expand(join(bowtieOut, '{sample}', '.bam'), sample = SAMPLES)
+
+
+rule map_tophat:
+	input:
+	output:
+	param:
+	run:
+		shell('for genotype in ${MAT_STRAIN} ${PAT_STRAIN};'
+			  'do echo "Sample : " ${sample} ". Mapping to pseudogenome : " $pseudogen/${genotype};'
+			  'mkdir ${bowtieOut}/${genotype}_${sample}/;'
+			  '${tophat} --transcriptome-index $pseudogen/transcriptome_data/Mus_musculus_${genotype}_transcriptomeIndex '
+	   		  '-p ${proc} -o ${bowtieOut}/${genotype}_${sample}/ --no-coverage-search --library-type fr-firststrand '
+     		  '$pseudogen/${genotype} ${fastq}/${sample}_R1.fastq.gz ${fastq}/${sample}_R2.fastq.gz;'
+			  'mv ${bowtieOut}/${genotype}_${sample}/accepted_hits.bam ${bowtieOut}/${genotype}_${sample}.bam'
+
+
+rule map_bowtie:
+	input:
+	output:
+	param:
+	run:
+		shell('${bwt} -x $pseudogen/${genotype} '
+			  '-1 ${fastq}/${sample}_R1.fastq.gz '
+			  '-2 ${fastq}/${sample}_R2.fastq.gz '
+			  '-X 1000 -p ${proc} | '
+			  '${samtools} view -Sb - | ${samtools} sort -@ ${proc} - '
+			  '${bowtieOut}/${genotype}_${sample}')
