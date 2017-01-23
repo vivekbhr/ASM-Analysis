@@ -138,8 +138,8 @@ mv ${refmapdir}/${sample}_suspMerged.bam ${mergedBAMs}/
 echo "Filtering and sorting. Sample : ${sample} "
 if [[ -z "${blklist}" ]]; then
   ${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter \
-  --random --chrM --lowqual > /tmp/${sample}.sam
-	${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam /tmp/${sample}.sam
+  --random --chrM --lowqual > ${tmp}/${sample}.sam
+	${samtools} sort -@ ${proc} -T ${sample} -O bam -o ${filteredBAMs}/${sample}_filt.bam ${tmp}/${sample}.sam
 else
   ${samtools} sort -@ ${proc} -T ${sample} ${mergedBAMs}/${sample}_suspMerged.bam -O sam | ${allelefilt} filter \
   --remove_blklist ${blklist} --random \
