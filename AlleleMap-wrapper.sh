@@ -83,7 +83,7 @@ do
     # makedir
     mkdir ${bowtieOut}/${genotype}_${sample}/
     # Map
-    ${tophat} --transcriptome-index $pseudogen/transcriptome_data/Mus_musculus_${genotype}_transcriptomeIndex \
+    ${tophat} --transcriptome-index $pseudogen/transcriptome_data/${genotype} \
 	   -p ${proc} -o ${bowtieOut}/${genotype}_${sample}/ --no-coverage-search --library-type fr-firststrand \
      $pseudogen/${genotype} \
      ${fastq}/${sample}_R1.fastq.gz \
